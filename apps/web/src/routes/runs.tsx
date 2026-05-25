@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Radio } from "lucide-react";
 import { z } from "zod";
 
+import { EmptyState } from "@/components/EmptyState";
 import { PageShell } from "@/components/PageShell";
 import { RunStatusBadge } from "@/components/RunStatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { requireAuth } from "@/lib/auth-guard";
 import { formatDuration, formatTimestamp } from "@/lib/format";
@@ -28,89 +29,102 @@ function RunsPage() {
 
   const runsQuery = useQuery({
     queryKey: ["runs", { task_id: taskId, limit: 100 }],
-    queryFn: async () => {
-      const { data } = await api.GET("/api/runs", {
-        params: { query: { task_id: taskId, limit: 100 } },
-      });
-      return data ?? [];
-    },
+    queryFn: async () =>
+      (
+        await api.GET("/api/runs", {
+          params: { query: { task_id: taskId, limit: 100 } },
+        })
+      ).data ?? [],
     refetchInterval: 4000,
   });
 
   return (
-    <PageShell>
+    <PageShell breadcrumb={[{ label: "Runs" }]}>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Runs</h1>
+          <h1 className="text-foreground text-2xl font-semibold tracking-tight">Runs</h1>
           <p className="text-muted-foreground text-sm">
-            Every apply, check, and revert is logged here with a live event stream.
+            Every apply, check, and revert. Auto-refreshes every 4s.
           </p>
         </div>
         {taskId && (
           <div className="flex items-center gap-2 text-sm">
-            <Badge variant="outline">filter: {taskId}</Badge>
+            <Badge variant="accent" className="font-mono">
+              {taskId}
+            </Badge>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => void navigate({ to: "/runs", search: {} })}
             >
-              Clear
+              Clear filter
             </Button>
           </div>
         )}
       </header>
 
-      <Card>
-        <CardContent className="p-0">
-          {runsQuery.isLoading ? (
-            <p className="text-muted-foreground p-12 text-center text-sm">Loading runs…</p>
-          ) : runsQuery.data && runsQuery.data.length > 0 ? (
-            <ul className="divide-border divide-y">
-              {runsQuery.data.map((run) => (
-                <li key={run.id}>
-                  <Link
-                    to="/runs/$runId"
-                    params={{ runId: run.id! }}
-                    className="hover:bg-secondary flex items-center justify-between gap-4 px-5 py-3 text-sm transition-colors"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <RunStatusBadge status={run.status} />
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{run.task_id}</p>
-                        <p className="text-muted-foreground text-xs">
-                          <span className="capitalize">{run.action}</span>
-                          {run.dry_run && " · dry-run"}
-                          {run.exit_code !== null && run.exit_code !== undefined && (
-                            <> · exit {run.exit_code}</>
-                          )}
-                        </p>
+      {runsQuery.isLoading ? (
+        <div className="space-y-2">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-16 rounded-xl" />
+          ))}
+        </div>
+      ) : runsQuery.data && runsQuery.data.length > 0 ? (
+        <div className="border-border bg-card overflow-hidden rounded-xl border">
+          <ul className="divide-border divide-y">
+            {runsQuery.data.map((run) => (
+              <li key={run.id}>
+                <Link
+                  to="/runs/$runId"
+                  params={{ runId: run.id! }}
+                  className="hover:bg-secondary/60 flex items-center justify-between gap-4 px-5 py-3.5 transition-colors"
+                >
+                  <div className="flex min-w-0 items-center gap-4">
+                    <RunStatusBadge status={run.status} variant="icon" />
+                    <div className="min-w-0">
+                      <p className="text-foreground truncate text-sm font-medium">{run.task_id}</p>
+                      <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
+                        <span className="capitalize">{run.action}</span>
+                        {run.dry_run && (
+                          <Badge variant="muted" className="font-mono">
+                            dry-run
+                          </Badge>
+                        )}
+                        {typeof run.exit_code === "number" && (
+                          <span className="font-mono">exit {run.exit_code}</span>
+                        )}
                       </div>
                     </div>
-                    <div className="text-muted-foreground flex items-center gap-4 text-xs">
-                      <span className="hidden sm:inline">{formatTimestamp(run.started_at)}</span>
-                      <span className="tabular-nums">
-                        {formatDuration(run.started_at, run.finished_at)}
-                      </span>
-                      <ChevronRight className="size-4" />
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="p-12 text-center">
-              <CardTitle className="text-base">No runs yet</CardTitle>
-              <CardDescription className="mt-1">
-                Start one from a{" "}
-                <Link to="/tasks" className="text-accent hover:underline">
-                  task
+                  </div>
+                  <div className="text-muted-foreground flex items-center gap-5 text-xs">
+                    <span className="hidden md:inline">{formatTimestamp(run.started_at)}</span>
+                    <span className="tabular-nums">
+                      {formatDuration(run.started_at, run.finished_at)}
+                    </span>
+                    <RunStatusBadge status={run.status} className="hidden sm:inline-flex" />
+                    <ChevronRight className="size-4" />
+                  </div>
                 </Link>
-                .
-              </CardDescription>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <EmptyState
+          icon={Radio}
+          title="No runs yet"
+          description={
+            taskId
+              ? "No runs for this task. Start one from the task page."
+              : "No runs anywhere. Start one from the Tasks page."
+          }
+          action={
+            <Button asChild>
+              <Link to="/tasks">Browse tasks</Link>
+            </Button>
+          }
+        />
+      )}
     </PageShell>
   );
 }

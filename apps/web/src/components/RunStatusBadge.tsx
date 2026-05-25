@@ -1,29 +1,77 @@
-import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, Circle, CircleDot, OctagonX, XCircle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+import { StatusDot } from "@/components/StatusDot";
 import { cn } from "@/lib/utils";
 
 export type RunStatus = "pending" | "running" | "succeeded" | "failed" | "cancelled";
 
-const statusConfig: Record<
-  RunStatus,
-  { label: string; variant: "default" | "muted" | "accent" | "success" | "destructive" }
-> = {
-  pending: { label: "Pending", variant: "muted" },
-  running: { label: "Running", variant: "accent" },
-  succeeded: { label: "Succeeded", variant: "success" },
-  failed: { label: "Failed", variant: "destructive" },
-  cancelled: { label: "Cancelled", variant: "muted" },
+interface Config {
+  label: string;
+  tone: "muted" | "accent" | "success" | "destructive" | "warning";
+  Icon: LucideIcon;
+  pulse?: boolean;
+}
+
+const config: Record<RunStatus, Config> = {
+  pending: { label: "Pending", tone: "muted", Icon: Circle },
+  running: { label: "Running", tone: "accent", Icon: CircleDot, pulse: true },
+  succeeded: { label: "Succeeded", tone: "success", Icon: CheckCircle2 },
+  failed: { label: "Failed", tone: "destructive", Icon: XCircle },
+  cancelled: { label: "Cancelled", tone: "warning", Icon: OctagonX },
 };
 
 interface RunStatusBadgeProps {
   status: string;
+  variant?: "pill" | "icon" | "compact";
   className?: string;
 }
 
-export function RunStatusBadge({ status, className }: RunStatusBadgeProps) {
-  const cfg = statusConfig[status as RunStatus] ?? { label: status, variant: "muted" as const };
+export function RunStatusBadge({ status, variant = "pill", className }: RunStatusBadgeProps) {
+  const cfg = config[status as RunStatus] ?? config.pending;
+  if (variant === "icon") {
+    const Icon = cfg.Icon;
+    return (
+      <Icon
+        className={cn(
+          "size-4",
+          {
+            "text-muted-foreground": cfg.tone === "muted",
+            "text-accent": cfg.tone === "accent",
+            "text-success": cfg.tone === "success",
+            "text-destructive": cfg.tone === "destructive",
+            "text-warning": cfg.tone === "warning",
+          },
+          cfg.pulse && "animate-pulse",
+          className,
+        )}
+      />
+    );
+  }
+  if (variant === "compact") {
+    return (
+      <span className={cn("inline-flex items-center gap-1.5 text-xs", className)}>
+        <StatusDot tone={cfg.tone} pulse={cfg.pulse} size="sm" />
+        <span className="text-foreground">{cfg.label}</span>
+      </span>
+    );
+  }
   return (
-    <Badge variant={cfg.variant} className={cn(status === "running" && "animate-pulse", className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+        {
+          "border-muted-foreground/30 text-muted-foreground": cfg.tone === "muted",
+          "border-accent/40 text-accent bg-accent/10": cfg.tone === "accent",
+          "border-success/40 text-success bg-success/10": cfg.tone === "success",
+          "border-destructive/40 text-destructive bg-destructive/10": cfg.tone === "destructive",
+          "border-warning/40 text-warning bg-warning/10": cfg.tone === "warning",
+        },
+        className,
+      )}
+    >
+      <StatusDot tone={cfg.tone} pulse={cfg.pulse} size="sm" />
       {cfg.label}
-    </Badge>
+    </span>
   );
 }

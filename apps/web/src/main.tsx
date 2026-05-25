@@ -3,7 +3,9 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { Toaster } from "sonner";
+import { useTheme } from "next-themes";
 
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
 
@@ -29,14 +31,31 @@ declare module "@tanstack/react-router" {
   }
 }
 
+function ThemedToaster() {
+  const { resolvedTheme } = useTheme();
+  return (
+    <Toaster
+      theme={resolvedTheme === "light" ? "light" : "dark"}
+      richColors
+      position="bottom-right"
+      closeButton
+      toastOptions={{
+        className: "border-border",
+      }}
+    />
+  );
+}
+
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element #root not found");
 
 createRoot(rootEl).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster richColors theme="dark" />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <ThemedToaster />
+      </QueryClientProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

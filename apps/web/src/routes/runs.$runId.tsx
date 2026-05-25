@@ -1,16 +1,18 @@
 import { useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, OctagonX } from "lucide-react";
+import { motion } from "motion/react";
+import { ChevronLeft, OctagonX, Radio, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 
+import { EmptyState } from "@/components/EmptyState";
 import { PageShell } from "@/components/PageShell";
 import { RunEventList } from "@/components/RunEventList";
 import { RunStatusBadge } from "@/components/RunStatusBadge";
+import { StatusDot } from "@/components/StatusDot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { requireAuth } from "@/lib/auth-guard";
 import { formatDuration, formatTimestamp } from "@/lib/format";
@@ -44,7 +46,6 @@ function RunDetailPage() {
   });
 
   const isTerminal = runQuery.data ? TERMINAL.has(runQuery.data.status) : false;
-
   const stream = useRunStream({ runId, enabled: !!runQuery.data });
 
   useEffect(() => {
@@ -59,155 +60,164 @@ function RunDetailPage() {
       const { data, error, response } = await api.POST("/api/runs/{run_id}/cancel", {
         params: { path: { run_id: runId } },
       });
-      if (error || !data) {
-        throw new Error(`Cancel failed (${response.status})`);
-      }
+      if (response.status === 409) throw new Error("Run already finished.");
+      if (error || !data) throw new Error(`Cancel failed (${response.status})`);
       return data;
     },
-    onSuccess: () => {
-      toast.success("Cancellation requested");
-    },
-    onError: (e: Error) => {
-      toast.error(e.message);
-    },
+    onSuccess: () => toast.success("Cancellation requested"),
+    onError: (e: Error) => toast.error("Could not cancel", { description: e.message }),
   });
 
   if (runQuery.isLoading) {
     return (
-      <PageShell>
-        <p className="text-muted-foreground p-12 text-center text-sm">Loading run…</p>
+      <PageShell breadcrumb={[{ label: "Runs", to: "/runs" }, { label: "…" }]}>
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </div>
       </PageShell>
     );
   }
 
   if (!runQuery.data) {
     return (
-      <PageShell>
-        <Card>
-          <CardHeader>
-            <CardTitle>Run not found</CardTitle>
-            <CardDescription>No run with id {runId}.</CardDescription>
-          </CardHeader>
-          <CardContent>
+      <PageShell breadcrumb={[{ label: "Runs", to: "/runs" }, { label: "Not found" }]}>
+        <EmptyState
+          icon={ShieldOff}
+          title="Run not found"
+          description={`No run with id ${runId}.`}
+          action={
             <Button variant="outline" asChild>
               <Link to="/runs">
                 <ChevronLeft className="size-4" />
                 Back to runs
               </Link>
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       </PageShell>
     );
   }
 
   const run = runQuery.data;
   const canCancel = run.status === "pending" || run.status === "running";
+  const shortId = (run.id ?? "").split("-")[0] ?? "";
 
   return (
-    <PageShell>
-      <div>
-        <Button variant="ghost" size="sm" asChild className="-ml-3 mb-2">
-          <Link to="/runs">
-            <ChevronLeft className="size-4" />
-            Runs
-          </Link>
-        </Button>
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <RunStatusBadge status={run.status} />
-              <span className="capitalize">{run.action}</span>
-              {run.dry_run && <Badge variant="muted">dry-run</Badge>}
-              {stream.connected && (
-                <Badge variant="accent" className="animate-pulse">
-                  live
-                </Badge>
-              )}
+    <PageShell
+      breadcrumb={[
+        { label: "Runs", to: "/runs" },
+        { label: <span className="font-mono">{shortId}</span> },
+      ]}
+    >
+      <header className="border-border bg-card overflow-hidden rounded-2xl border">
+        <div className="from-accent/10 to-card bg-gradient-to-br p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm">
+                <RunStatusBadge status={run.status} />
+                <span className="text-muted-foreground capitalize">{run.action}</span>
+                {run.dry_run && <Badge variant="muted">dry-run</Badge>}
+                {stream.connected && !isTerminal && (
+                  <Badge variant="accent" className="gap-1.5">
+                    <StatusDot tone="accent" pulse size="sm" />
+                    live
+                  </Badge>
+                )}
+              </div>
+              <h1 className="text-foreground text-2xl font-semibold tracking-tight">
+                <Link
+                  to="/tasks/$taskId"
+                  params={{ taskId: run.task_id }}
+                  className="hover:text-accent transition-colors"
+                >
+                  {run.task_id}
+                </Link>
+              </h1>
+              <p className="text-muted-foreground font-mono text-xs">{run.id}</p>
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              <Link
-                to="/tasks/$taskId"
-                params={{ taskId: run.task_id }}
-                className="hover:text-accent transition-colors"
+            {canCancel && (
+              <Button
+                variant="destructive"
+                onClick={() => cancelRun.mutate()}
+                disabled={cancelRun.isPending}
               >
-                {run.task_id}
-              </Link>
-            </h1>
+                <OctagonX className="size-4" />
+                Cancel run
+              </Button>
+            )}
           </div>
-          {canCancel && (
-            <Button
-              variant="destructive"
-              onClick={() => cancelRun.mutate()}
-              disabled={cancelRun.isPending}
-            >
-              <OctagonX className="size-4" />
-              Cancel run
-            </Button>
-          )}
-        </header>
-      </div>
+        </div>
 
-      <Card>
-        <CardContent className="grid grid-cols-1 gap-3 p-4 text-sm sm:grid-cols-4">
+        <div className="border-border grid grid-cols-2 gap-4 border-t p-5 text-sm sm:grid-cols-4">
           <Field label="Started" value={formatTimestamp(run.started_at)} />
           <Field label="Finished" value={formatTimestamp(run.finished_at)} />
-          <Field label="Duration" value={formatDuration(run.started_at, run.finished_at)} />
+          <Field label="Duration" value={formatDuration(run.started_at, run.finished_at)} mono />
           <Field
             label="Exit code"
             value={
               run.exit_code === null || run.exit_code === undefined ? "—" : String(run.exit_code)
             }
+            mono
           />
-        </CardContent>
-        {run.summary && Object.keys(run.summary).length > 0 && (
-          <>
-            <Separator />
-            <CardContent className="flex flex-wrap gap-2 p-4 text-xs">
-              {Object.entries(run.summary).map(([k, v]) => (
-                <Badge key={k} variant="outline">
-                  {k}: <span className="ml-1 font-mono">{String(v)}</span>
-                </Badge>
-              ))}
-            </CardContent>
-          </>
-        )}
-      </Card>
+        </div>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-base">Event stream</CardTitle>
-            <CardDescription>
-              {isTerminal
-                ? "Final event log."
-                : stream.connected
-                  ? "Live — updates as Ansible emits events."
-                  : "Connecting…"}
-            </CardDescription>
+        {run.summary && Object.keys(run.summary).length > 0 && (
+          <div className="border-border flex flex-wrap gap-1.5 border-t p-5">
+            {Object.entries(run.summary).map(([k, v]) => (
+              <Badge key={k} variant="outline" className="font-mono">
+                <span className="text-muted-foreground">{k}:</span>
+                <span className="text-foreground ml-1">{String(v)}</span>
+              </Badge>
+            ))}
           </div>
-          <span className="text-muted-foreground text-xs tabular-nums">
+        )}
+      </header>
+
+      <section className="border-border bg-card overflow-hidden rounded-2xl border">
+        <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <Radio className="text-accent size-4" />
+            <h2 className="text-foreground text-sm font-semibold tracking-tight">Event stream</h2>
+            <span className="text-muted-foreground text-xs">
+              {isTerminal ? "Final log" : stream.connected ? "Streaming live" : "Connecting…"}
+            </span>
+          </div>
+          <motion.span
+            key={stream.events.length}
+            initial={{ scale: 0.9, opacity: 0.6 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-muted-foreground font-mono text-xs tabular-nums"
+          >
             {stream.events.length} event{stream.events.length === 1 ? "" : "s"}
-          </span>
-        </CardHeader>
-        <CardContent className="p-0">
+          </motion.span>
+        </header>
+        <div className="border-border border-t">
           <RunEventList
             events={stream.events}
             emptyMessage={
               isTerminal ? "No events were recorded for this run." : "Waiting for events…"
             }
           />
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </PageShell>
   );
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+interface FieldProps {
+  label: string;
+  value: string;
+  mono?: boolean;
+}
+
+function Field({ label, value, mono }: FieldProps) {
   return (
-    <div className="space-y-0.5">
-      <div className="text-muted-foreground text-xs uppercase tracking-wide">{label}</div>
-      <div className="font-mono text-sm">{value}</div>
+    <div className="space-y-1">
+      <div className="text-muted-foreground text-[10px] font-medium uppercase tracking-widest">
+        {label}
+      </div>
+      <div className={`text-foreground ${mono ? "font-mono" : ""}`}>{value}</div>
     </div>
   );
 }

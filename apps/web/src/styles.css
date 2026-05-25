@@ -1,50 +1,160 @@
 @import "tailwindcss";
 
+@import "@fontsource/geist-sans/300.css";
+@import "@fontsource/geist-sans/400.css";
+@import "@fontsource/geist-sans/500.css";
+@import "@fontsource/geist-sans/600.css";
+@import "@fontsource/geist-sans/700.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+
 @theme {
-  --color-background: oklch(0.145 0 0);
-  --color-foreground: oklch(0.985 0 0);
-  --color-card: oklch(0.205 0 0);
-  --color-card-foreground: oklch(0.985 0 0);
-  --color-popover: oklch(0.205 0 0);
-  --color-popover-foreground: oklch(0.985 0 0);
-  --color-muted: oklch(0.269 0 0);
-  --color-muted-foreground: oklch(0.708 0 0);
-  --color-primary: oklch(0.985 0 0);
-  --color-primary-foreground: oklch(0.205 0 0);
-  --color-secondary: oklch(0.269 0 0);
-  --color-secondary-foreground: oklch(0.985 0 0);
-  --color-accent: oklch(0.65 0.18 35);
-  --color-accent-foreground: oklch(0.985 0 0);
-  --color-border: oklch(0.269 0 0);
-  --color-input: oklch(0.269 0 0);
-  --color-ring: oklch(0.65 0.18 35);
-  --color-destructive: oklch(0.577 0.245 27.325);
-  --color-destructive-foreground: oklch(0.985 0 0);
+  --font-sans:
+    "Geist Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "JetBrains Mono", "Fira Code", monospace;
+
+  --color-background: oklch(0.145 0.005 264);
+  --color-foreground: oklch(0.985 0.002 264);
+  --color-card: oklch(0.185 0.006 264);
+  --color-card-foreground: oklch(0.985 0.002 264);
+  --color-popover: oklch(0.18 0.006 264);
+  --color-popover-foreground: oklch(0.985 0.002 264);
+  --color-muted: oklch(0.235 0.006 264);
+  --color-muted-foreground: oklch(0.68 0.012 264);
+  --color-subtle: oklch(0.215 0.006 264);
+  --color-subtle-foreground: oklch(0.85 0.005 264);
+  --color-primary: oklch(0.985 0.002 264);
+  --color-primary-foreground: oklch(0.165 0.005 264);
+  --color-secondary: oklch(0.235 0.006 264);
+  --color-secondary-foreground: oklch(0.985 0.002 264);
+  --color-accent: oklch(0.72 0.135 165);
+  --color-accent-foreground: oklch(0.12 0.05 165);
+  --color-accent-muted: oklch(0.32 0.06 165);
+  --color-border: oklch(0.27 0.008 264);
+  --color-border-strong: oklch(0.36 0.01 264);
+  --color-input: oklch(0.23 0.006 264);
+  --color-ring: oklch(0.72 0.135 165);
+  --color-destructive: oklch(0.62 0.22 25);
+  --color-destructive-foreground: oklch(0.985 0.002 264);
+  --color-warning: oklch(0.78 0.16 80);
+  --color-warning-foreground: oklch(0.16 0.05 80);
+  --color-success: oklch(0.72 0.135 165);
+  --color-success-foreground: oklch(0.12 0.05 165);
+  --color-info: oklch(0.7 0.14 240);
+  --color-info-foreground: oklch(0.12 0.05 240);
 
   --radius: 0.625rem;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "JetBrains Mono", "Fira Code", monospace;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
 }
 
-.light {
-  --color-background: oklch(1 0 0);
-  --color-foreground: oklch(0.145 0 0);
-  --color-card: oklch(0.985 0 0);
-  --color-card-foreground: oklch(0.145 0 0);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.145 0 0);
-  --color-muted: oklch(0.96 0 0);
-  --color-muted-foreground: oklch(0.45 0 0);
-  --color-primary: oklch(0.205 0 0);
-  --color-primary-foreground: oklch(0.985 0 0);
-  --color-secondary: oklch(0.96 0 0);
-  --color-secondary-foreground: oklch(0.205 0 0);
-  --color-border: oklch(0.92 0 0);
-  --color-input: oklch(0.92 0 0);
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html.light {
+    color-scheme: light;
+    --color-background: oklch(0.995 0.002 264);
+    --color-foreground: oklch(0.16 0.005 264);
+    --color-card: oklch(1 0 0);
+    --color-card-foreground: oklch(0.16 0.005 264);
+    --color-popover: oklch(1 0 0);
+    --color-popover-foreground: oklch(0.16 0.005 264);
+    --color-muted: oklch(0.96 0.003 264);
+    --color-muted-foreground: oklch(0.46 0.008 264);
+    --color-subtle: oklch(0.975 0.003 264);
+    --color-subtle-foreground: oklch(0.3 0.006 264);
+    --color-primary: oklch(0.205 0.006 264);
+    --color-primary-foreground: oklch(0.985 0.002 264);
+    --color-secondary: oklch(0.96 0.003 264);
+    --color-secondary-foreground: oklch(0.205 0.006 264);
+    --color-accent: oklch(0.55 0.135 165);
+    --color-accent-foreground: oklch(0.985 0.002 264);
+    --color-accent-muted: oklch(0.92 0.04 165);
+    --color-border: oklch(0.91 0.005 264);
+    --color-border-strong: oklch(0.82 0.005 264);
+    --color-input: oklch(0.94 0.004 264);
+    --color-ring: oklch(0.55 0.135 165);
+    --color-destructive: oklch(0.58 0.22 25);
+    --color-warning: oklch(0.62 0.16 80);
+    --color-success: oklch(0.55 0.135 165);
+    --color-info: oklch(0.55 0.14 240);
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100vh;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "cv11", "ss01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+  }
+
+  ::selection {
+    background-color: oklch(from var(--color-accent) l c h / 0.3);
+  }
 }
 
-html,
-body,
-#root {
-  min-height: 100vh;
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+
+  .text-gradient {
+    background: linear-gradient(
+      135deg,
+      var(--color-foreground) 0%,
+      var(--color-muted-foreground) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, var(--color-border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .bg-dotgrid {
+    background-image: radial-gradient(circle, var(--color-border) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 oklch(from var(--color-accent) l c h / 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px oklch(from var(--color-accent) l c h / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 oklch(from var(--color-accent) l c h / 0);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.66, 0, 0, 1) infinite;
 }
