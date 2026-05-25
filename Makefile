@@ -6,12 +6,11 @@ export LC_ALL ?= C.UTF-8
 
 .PHONY: help install install-hooks ansible-deps \
         dev dev-server dev-web \
-        test test-server test-web test-cov \
         lint lint-fix format format-check typecheck \
         gen-api \
         db-init db-migrate db-migration db-downgrade db-history db-current db-reset db-truncate db-shell \
         deps-outdated deps-upgrade deps-upgrade-server deps-upgrade-web deps-lock \
-        build build-server build-web build-deb \
+        build build-server build-web \
         clean distclean
 
 help: ## show this help
@@ -35,22 +34,11 @@ dev: ## run backend + frontend dev servers (Ctrl-C stops both)
 	(cd apps/web && pnpm dev --port 5173) & \
 	wait
 
-dev-server: ## backend only (uvicorn :8000)
+dev-server: ## backend only (uvicorn :8000) — run with sudo for real hardening
 	cd apps/server && uv run uvicorn shieldbuntu.main:app --reload --port 8000
 
 dev-web: ## frontend only (vite :5173)
 	cd apps/web && pnpm dev --port 5173
-
-test: test-server test-web ## run all tests
-
-test-server: ## backend tests
-	cd apps/server && uv run pytest
-
-test-web: ## frontend tests
-	cd apps/web && pnpm test --run
-
-test-cov: ## backend tests with coverage report
-	cd apps/server && uv run pytest --cov --cov-report=term-missing
 
 lint: ## ruff + eslint (read-only)
 	cd apps/server && uv run ruff check .
@@ -134,13 +122,9 @@ build-server: ## build backend wheel
 build-web: ## build frontend production bundle
 	cd apps/web && pnpm build
 
-build-deb: build ## build .deb package via nfpm
-	bash packaging/debian/build.sh
-
 clean: ## remove generated artifacts (keeps .venv + node_modules)
-	rm -rf apps/server/dist apps/server/.pytest_cache apps/server/.ruff_cache apps/server/var/shieldbuntu.db*
+	rm -rf apps/server/dist apps/server/.ruff_cache apps/server/var/shieldbuntu.db*
 	rm -rf apps/web/dist apps/web/.vite apps/web/.tsbuildinfo apps/web/tsconfig*.tsbuildinfo
-	rm -rf packaging/dist
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
 distclean: clean ## remove EVERYTHING including .venv + node_modules

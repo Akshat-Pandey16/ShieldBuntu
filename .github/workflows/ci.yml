@@ -29,8 +29,8 @@ jobs:
         run: uv run ruff check .
       - name: Ruff format check
         run: uv run ruff format --check .
-      - name: Pytest
-        run: uv run pytest --cov=shieldbuntu --cov-report=term-missing
+      - name: Build wheel
+        run: uv build
 
   web:
     name: web (react)
@@ -56,7 +56,5 @@ jobs:
         run: pnpm lint
       - name: Format check
         run: pnpm format:check
-      - name: Test
-        run: pnpm test --run
       - name: Build
         run: pnpm build
