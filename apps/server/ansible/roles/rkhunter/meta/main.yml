@@ -1,0 +1,30 @@
+galaxy_info:
+  role_name: rkhunter
+  author: shieldbuntu
+  description: Rootkit Hunter — periodic rootkit and malware scans
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: Rootkit Hunter
+  description: >-
+    Installs rkhunter, updates its database, and enables daily root-owned
+    scans via the system cron.
+  category: malware-scanner
+  cis_refs: []
+  profiles:
+    - cis-l2
+    - server
+    - workstation
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - rkhunter
+    - malware-scanner

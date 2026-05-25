@@ -1,0 +1,39 @@
+- name: Ensure data dir exists
+  ansible.builtin.file:
+    path: "{{ tor_blocking_local_list | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Fetch current Tor exit node list
+  ansible.builtin.get_url:
+    url: "{{ tor_blocking_exit_list_url }}"
+    dest: "{{ tor_blocking_local_list }}"
+    mode: "0644"
+    force: true
+    timeout: 30
+
+- name: Read fetched Tor exit IPs
+  ansible.builtin.slurp:
+    src: "{{ tor_blocking_local_list }}"
+  register: tor_blocking_raw
+
+- name: Parse exit IP list
+  ansible.builtin.set_fact:
+    tor_blocking_ips: >-
+      {{
+        (tor_blocking_raw.content | b64decode).splitlines()
+        | map('trim')
+        | reject('match', '^\\s*$')
+        | reject('match', '^#')
+        | list
+      }}
+
+- name: Deny inbound traffic from each Tor exit IP via ufw
+  community.general.ufw:
+    rule: deny
+    direction: in
+    src: "{{ item }}"
+    comment: "{{ tor_blocking_rule_comment }}"
+  loop: "{{ tor_blocking_ips }}"
+  loop_control:
+    label: "{{ item }}"

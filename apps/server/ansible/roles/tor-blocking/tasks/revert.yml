@@ -1,0 +1,34 @@
+- name: Read previously-fetched Tor exit IPs (if present)
+  ansible.builtin.slurp:
+    src: "{{ tor_blocking_local_list }}"
+  register: tor_blocking_raw
+  failed_when: false
+
+- name: Parse stored exit IP list
+  ansible.builtin.set_fact:
+    tor_blocking_ips: >-
+      {{
+        ((tor_blocking_raw.content | default('') | b64decode) if tor_blocking_raw.content is defined else '')
+        | string
+        | splitlines
+        | map('trim')
+        | reject('match', '^\\s*$')
+        | reject('match', '^#')
+        | list
+      }}
+
+- name: Remove ufw deny rules for stored Tor exit IPs
+  community.general.ufw:
+    rule: deny
+    direction: in
+    src: "{{ item }}"
+    delete: true
+  loop: "{{ tor_blocking_ips }}"
+  loop_control:
+    label: "{{ item }}"
+  failed_when: false
+
+- name: Drop the cached exit list
+  ansible.builtin.file:
+    path: "{{ tor_blocking_local_list }}"
+    state: absent

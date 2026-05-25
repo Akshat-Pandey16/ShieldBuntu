@@ -1,0 +1,24 @@
+- name: Restore fstab from snapshot
+  ansible.builtin.copy:
+    src: "{{ no_exec_fstab_backup }}"
+    dest: "{{ no_exec_fstab }}"
+    remote_src: true
+    mode: "0644"
+    owner: root
+    group: root
+  failed_when: false
+  register: no_exec_restore
+
+- name: Remount affected mountpoints
+  ansible.builtin.command: "mount -o remount {{ item.path }}"
+  loop: "{{ no_exec_mounts }}"
+  loop_control:
+    label: "{{ item.path }}"
+  changed_when: true
+  failed_when: false
+
+- name: Drop fstab backup after successful restore
+  ansible.builtin.file:
+    path: "{{ no_exec_fstab_backup }}"
+    state: absent
+  when: no_exec_restore is success

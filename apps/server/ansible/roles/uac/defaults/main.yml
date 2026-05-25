@@ -1,0 +1,12 @@
+uac_sudoers_dropin: /etc/sudoers.d/99-shieldbuntu
+uac_sudo_log: /var/log/sudo.log
+uac_sudo_timestamp_timeout: 5
+uac_sudo_passwd_tries: 3
+
+uac_sudoers_content: |
+  Defaults    use_pty
+  Defaults    logfile="{{ uac_sudo_log }}"
+  Defaults    timestamp_timeout={{ uac_sudo_timestamp_timeout }}
+  Defaults    passwd_tries={{ uac_sudo_passwd_tries }}
+  Defaults    timestamp_type=tty
+  Defaults    !visiblepw

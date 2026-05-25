@@ -1,0 +1,4 @@
+- name: Remove TMOUT profile drop-in
+  ansible.builtin.file:
+    path: "{{ session_timeout_dropin }}"
+    state: absent

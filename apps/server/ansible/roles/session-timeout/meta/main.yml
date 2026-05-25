@@ -1,0 +1,32 @@
+galaxy_info:
+  role_name: session-timeout
+  author: shieldbuntu
+  description: Idle shell session timeout
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: Idle session timeout
+  description: >-
+    Logs out idle interactive shells after a configurable timeout via TMOUT
+    set in /etc/profile.d/.
+  category: session
+  cis_refs:
+    - "5.4.5"
+  profiles:
+    - cis-l1
+    - cis-l2
+    - server
+    - workstation
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - session
+    - timeout

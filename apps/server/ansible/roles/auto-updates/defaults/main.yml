@@ -1,0 +1,11 @@
+auto_updates_packages:
+  - unattended-upgrades
+  - apt-listchanges
+
+auto_updates_dropin: /etc/apt/apt.conf.d/20shieldbuntu-auto-upgrades
+
+auto_updates_periodic_content: |
+  APT::Periodic::Update-Package-Lists "1";
+  APT::Periodic::Download-Upgradeable-Packages "1";
+  APT::Periodic::AutocleanInterval "7";
+  APT::Periodic::Unattended-Upgrade "1";

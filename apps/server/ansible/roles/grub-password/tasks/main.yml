@@ -1,0 +1,37 @@
+- name: Require a password value from extra-vars
+  ansible.builtin.assert:
+    that:
+      - grub_password_plain | length > 0
+    fail_msg: "grub_password_plain extra-var must be set (non-empty)."
+
+- name: Hash the password with grub-mkpasswd-pbkdf2
+  ansible.builtin.shell: |
+    set -o pipefail
+    printf '%s\n%s\n' "{{ grub_password_plain }}" "{{ grub_password_plain }}" \
+      | grub-mkpasswd-pbkdf2 \
+      | awk '/grub.pbkdf2/ {print $NF}'
+  args:
+    executable: /bin/bash
+  register: grub_password_hash
+  changed_when: false
+  no_log: true
+
+- name: Write the GRUB superuser drop-in
+  ansible.builtin.copy:
+    dest: "{{ grub_password_dropin }}"
+    content: |
+      #!/bin/sh
+      cat <<EOF
+      set superusers="{{ grub_password_user }}"
+      password_pbkdf2 {{ grub_password_user }} {{ grub_password_hash.stdout }}
+      EOF
+    mode: "0755"
+    owner: root
+    group: root
+  no_log: true
+  register: grub_dropin
+
+- name: Rebuild GRUB config when drop-in changed
+  ansible.builtin.command: update-grub
+  when: grub_dropin.changed
+  changed_when: grub_dropin.changed

@@ -1,0 +1,2 @@
+usbguard_rules_file: /etc/usbguard/rules.conf
+usbguard_rules_backup: /etc/usbguard/rules.conf.shieldbuntu-bak

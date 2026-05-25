@@ -1,0 +1,31 @@
+- name: Install AppArmor packages
+  ansible.builtin.apt:
+    name: "{{ apparmor_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ensure AppArmor service is enabled and started
+  ansible.builtin.systemd:
+    name: apparmor
+    enabled: true
+    state: started
+
+- name: Enable AppArmor on the kernel cmdline
+  ansible.builtin.lineinfile:
+    path: "{{ apparmor_grub_file }}"
+    regexp: '^GRUB_CMDLINE_LINUX="(.*)"$'
+    line: 'GRUB_CMDLINE_LINUX="{{ (apparmor_required_cmdline | join('' '')) }}"'
+    backrefs: false
+  register: apparmor_grub_updated
+
+- name: Rebuild GRUB config if cmdline changed
+  ansible.builtin.command: update-grub
+  when: apparmor_grub_updated.changed
+  changed_when: apparmor_grub_updated.changed
+
+- name: Switch all loaded profiles to enforce mode
+  ansible.builtin.command: aa-enforce /etc/apparmor.d/*
+  register: apparmor_enforce
+  changed_when: "'Setting' in apparmor_enforce.stdout"
+  failed_when: false

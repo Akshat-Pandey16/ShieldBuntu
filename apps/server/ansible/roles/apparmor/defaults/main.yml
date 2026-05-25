@@ -1,0 +1,10 @@
+apparmor_packages:
+  - apparmor
+  - apparmor-utils
+  - apparmor-profiles
+  - apparmor-profiles-extra
+
+apparmor_grub_file: /etc/default/grub
+apparmor_required_cmdline:
+  - "apparmor=1"
+  - "security=apparmor"

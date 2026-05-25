@@ -1,0 +1,2 @@
+rkhunter_config_dropin: /etc/default/rkhunter.shieldbuntu
+rkhunter_cron_daily: true

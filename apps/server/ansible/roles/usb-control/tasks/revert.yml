@@ -1,0 +1,23 @@
+- name: Stop and disable usbguard
+  ansible.builtin.systemd:
+    name: usbguard
+    enabled: false
+    state: stopped
+  failed_when: false
+
+- name: Restore previous usbguard rules from backup
+  ansible.builtin.copy:
+    src: "{{ usbguard_rules_backup }}"
+    dest: "{{ usbguard_rules_file }}"
+    remote_src: true
+    mode: "0600"
+    owner: root
+    group: root
+  failed_when: false
+  register: usbguard_restore
+
+- name: Drop backup file after restore
+  ansible.builtin.file:
+    path: "{{ usbguard_rules_backup }}"
+    state: absent
+  when: usbguard_restore is success

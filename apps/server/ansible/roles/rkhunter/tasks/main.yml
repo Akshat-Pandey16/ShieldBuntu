@@ -1,0 +1,29 @@
+- name: Install rkhunter
+  ansible.builtin.apt:
+    name: rkhunter
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Configure daily cron + DB updates
+  ansible.builtin.copy:
+    dest: /etc/default/rkhunter
+    content: |
+      CRON_DAILY_RUN="{{ 'true' if rkhunter_cron_daily else 'false' }}"
+      CRON_DB_UPDATE="true"
+      DB_UPDATE_EMAIL="false"
+      APT_AUTOGEN="true"
+    mode: "0644"
+    owner: root
+    group: root
+    backup: true
+
+- name: Refresh rkhunter database
+  ansible.builtin.command: rkhunter --update
+  register: rkhunter_update
+  changed_when: "'updated' in rkhunter_update.stdout.lower()"
+  failed_when: rkhunter_update.rc not in [0, 2]
+
+- name: Update rkhunter file properties baseline
+  ansible.builtin.command: rkhunter --propupd --quiet
+  changed_when: true

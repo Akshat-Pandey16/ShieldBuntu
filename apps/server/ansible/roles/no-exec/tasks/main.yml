@@ -1,0 +1,20 @@
+- name: Snapshot fstab before modification
+  ansible.builtin.copy:
+    src: "{{ no_exec_fstab }}"
+    dest: "{{ no_exec_fstab_backup }}"
+    remote_src: true
+    force: false
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Mount hardened tmpfs entries
+  ansible.posix.mount:
+    path: "{{ item.path }}"
+    src: tmpfs
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.opts }}"
+    state: mounted
+  loop: "{{ no_exec_mounts }}"
+  loop_control:
+    label: "{{ item.path }}"

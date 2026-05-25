@@ -1,0 +1,31 @@
+galaxy_info:
+  role_name: tor-blocking
+  author: shieldbuntu
+  description: Block inbound traffic from the public Tor exit node list
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: Tor exit blocking
+  description: >-
+    Fetches the current Tor exit node list from the Tor Project and configures
+    UFW to deny inbound traffic from each address.
+  category: network
+  cis_refs: []
+  profiles:
+    - cis-l2
+    - server
+    - workstation
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - tor
+    - network
+    - firewall

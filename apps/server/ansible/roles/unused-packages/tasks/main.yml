@@ -1,0 +1,15 @@
+- name: Refresh apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Autoremove orphaned packages
+  ansible.builtin.apt:
+    autoremove: true
+    purge: true
+  when: unused_packages_autoremove
+
+- name: Autoclean apt cache
+  ansible.builtin.apt:
+    autoclean: true
+  when: unused_packages_autoclean

@@ -1,0 +1,33 @@
+galaxy_info:
+  role_name: auto-updates
+  author: shieldbuntu
+  description: Enable unattended security updates
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: Automatic security updates
+  description: >-
+    Installs and enables unattended-upgrades to apply security updates
+    automatically.
+  category: updates
+  cis_refs:
+    - "1.2.1"
+    - "1.2.2"
+  profiles:
+    - cis-l1
+    - cis-l2
+    - server
+    - workstation
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - updates
+    - unattended-upgrades

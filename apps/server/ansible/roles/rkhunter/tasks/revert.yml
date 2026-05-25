@@ -1,0 +1,11 @@
+- name: Disable rkhunter daily cron
+  ansible.builtin.copy:
+    dest: /etc/default/rkhunter
+    content: |
+      CRON_DAILY_RUN="false"
+      CRON_DB_UPDATE="false"
+      DB_UPDATE_EMAIL="false"
+      APT_AUTOGEN="false"
+    mode: "0644"
+    owner: root
+    group: root

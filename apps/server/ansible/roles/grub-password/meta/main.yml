@@ -1,0 +1,33 @@
+galaxy_info:
+  role_name: grub-password
+  author: shieldbuntu
+  description: Password-protect GRUB so unattended boot params can't be edited
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: GRUB password
+  description: >-
+    Sets a PBKDF2 password on the GRUB bootloader so unauthenticated users
+    can't edit kernel command-line parameters at boot. Requires
+    grub_password_plain in extra-vars (UI prompts for it).
+  category: bootloader
+  cis_refs:
+    - "1.4.1"
+    - "1.4.2"
+  profiles:
+    - cis-l1
+    - cis-l2
+    - server
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - grub
+    - bootloader

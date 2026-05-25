@@ -1,0 +1,13 @@
+- name: Stop and disable freshclam
+  ansible.builtin.systemd:
+    name: clamav-freshclam
+    enabled: false
+    state: stopped
+  failed_when: false
+
+- name: Stop and disable clamav-daemon
+  ansible.builtin.systemd:
+    name: clamav-daemon
+    enabled: false
+    state: stopped
+  failed_when: false

@@ -1,0 +1,5 @@
+- name: No-op revert
+  ansible.builtin.debug:
+    msg: >-
+      Cleaning up unused packages is not reversible — apt has no record of
+      what was removed. To restore a specific package, install it manually.

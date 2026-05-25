@@ -1,0 +1,4 @@
+- name: Remove ShieldBuntu sudoers drop-in
+  ansible.builtin.file:
+    path: "{{ uac_sudoers_dropin }}"
+    state: absent

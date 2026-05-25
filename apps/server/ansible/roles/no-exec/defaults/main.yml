@@ -1,0 +1,13 @@
+no_exec_fstab: /etc/fstab
+no_exec_fstab_backup: /etc/fstab.shieldbuntu-bak
+
+no_exec_mounts:
+  - path: /tmp
+    fstype: tmpfs
+    opts: "defaults,nodev,nosuid,noexec,mode=1777"
+  - path: /var/tmp
+    fstype: tmpfs
+    opts: "defaults,nodev,nosuid,noexec,mode=1777"
+  - path: /dev/shm
+    fstype: tmpfs
+    opts: "defaults,nodev,nosuid,noexec"

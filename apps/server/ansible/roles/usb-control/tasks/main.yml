@@ -1,0 +1,41 @@
+- name: Install usbguard
+  ansible.builtin.apt:
+    name: usbguard
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Stat existing usbguard rules
+  ansible.builtin.stat:
+    path: "{{ usbguard_rules_file }}"
+  register: usbguard_rules_stat
+
+- name: Snapshot current rules before regenerating
+  ansible.builtin.copy:
+    src: "{{ usbguard_rules_file }}"
+    dest: "{{ usbguard_rules_backup }}"
+    remote_src: true
+    force: false
+    mode: "0600"
+    owner: root
+    group: root
+  when: usbguard_rules_stat.stat.exists
+
+- name: Generate allowlist from currently-attached devices
+  ansible.builtin.shell:
+    cmd: usbguard generate-policy > {{ usbguard_rules_file }}
+  args:
+    creates: "{{ usbguard_rules_backup }}"
+
+- name: Lock down rules file permissions
+  ansible.builtin.file:
+    path: "{{ usbguard_rules_file }}"
+    mode: "0600"
+    owner: root
+    group: root
+
+- name: Enable and start usbguard
+  ansible.builtin.systemd:
+    name: usbguard
+    enabled: true
+    state: started

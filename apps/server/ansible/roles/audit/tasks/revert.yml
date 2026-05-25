@@ -1,0 +1,11 @@
+- name: Remove ShieldBuntu audit rules
+  ansible.builtin.file:
+    path: "{{ audit_rules_file }}"
+    state: absent
+  register: audit_rules_removed
+
+- name: Reload audit rules after removal
+  ansible.builtin.command: augenrules --load
+  when: audit_rules_removed.changed
+  changed_when: audit_rules_removed.changed
+  failed_when: false

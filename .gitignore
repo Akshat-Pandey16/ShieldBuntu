@@ -36,9 +36,7 @@ dist/
 *.tsbuildinfo
 
 # Editor
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
+.vscode/
 .idea/
 *.swp
 *~
@@ -63,11 +61,3 @@ Thumbs.db
 apps/server/ansible/artifacts/
 apps/server/ansible/.cache/
 
-# Playwright
-apps/web/playwright-report/
-apps/web/test-results/
-apps/web/blob-report/
-
-# Packaging artifacts
-packaging/dist/
-*.deb

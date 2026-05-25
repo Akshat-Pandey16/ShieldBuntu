@@ -1,0 +1,26 @@
+audit_rules_file: /etc/audit/rules.d/99-shieldbuntu.rules
+audit_packages:
+  - auditd
+  - audispd-plugins
+
+audit_rules_content: |
+  -D
+  -b 8192
+  -f 1
+  -w /etc/passwd -p wa -k identity
+  -w /etc/shadow -p wa -k identity
+  -w /etc/group -p wa -k identity
+  -w /etc/gshadow -p wa -k identity
+  -w /etc/sudoers -p wa -k sudoers
+  -w /etc/sudoers.d/ -p wa -k sudoers
+  -a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -k time-change
+  -a always,exit -F arch=b32 -S adjtimex,settimeofday,clock_settime,stime -k time-change
+  -w /etc/localtime -p wa -k time-change
+  -a always,exit -F arch=b64 -S sethostname,setdomainname -k system-locale
+  -a always,exit -F arch=b32 -S sethostname,setdomainname -k system-locale
+  -w /etc/issue -p wa -k system-locale
+  -w /etc/issue.net -p wa -k system-locale
+  -w /etc/hosts -p wa -k system-locale
+  -w /etc/network/ -p wa -k system-locale
+  -a always,exit -F arch=b64 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts
+  -a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=4294967295 -k mounts

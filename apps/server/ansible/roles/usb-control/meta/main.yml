@@ -1,0 +1,31 @@
+galaxy_info:
+  role_name: usb-control
+  author: shieldbuntu
+  description: USB device whitelisting via usbguard
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: USB device control
+  description: >-
+    Installs usbguard, captures a baseline policy of currently-connected USB
+    devices as the allowlist, and enables enforcement on future inserts.
+  category: peripherals
+  cis_refs: []
+  profiles:
+    - cis-l2
+    - server
+    - workstation
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - usb
+    - usbguard
+    - peripherals

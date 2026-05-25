@@ -1,0 +1,30 @@
+galaxy_info:
+  role_name: fail2ban
+  author: shieldbuntu
+  description: Fail2Ban with an SSH jail
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: Fail2Ban
+  description: >-
+    Installs Fail2Ban and writes an SSH jail that bans IPs after repeated
+    auth failures.
+  category: intrusion-prevention
+  cis_refs: []
+  profiles:
+    - cis-l2
+    - server
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - fail2ban
+    - intrusion-prevention
+    - ssh

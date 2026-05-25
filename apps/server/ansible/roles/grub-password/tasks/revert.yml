@@ -1,0 +1,10 @@
+- name: Remove ShieldBuntu GRUB password drop-in
+  ansible.builtin.file:
+    path: "{{ grub_password_dropin }}"
+    state: absent
+  register: grub_revert
+
+- name: Rebuild GRUB config after removing drop-in
+  ansible.builtin.command: update-grub
+  when: grub_revert.changed
+  changed_when: grub_revert.changed

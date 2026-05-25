@@ -1,0 +1,9 @@
+- name: Write TMOUT profile drop-in
+  ansible.builtin.copy:
+    dest: "{{ session_timeout_dropin }}"
+    content: |
+      readonly TMOUT={{ session_timeout_seconds }}
+      export TMOUT
+    mode: "0644"
+    owner: root
+    group: root

@@ -1,0 +1,37 @@
+galaxy_info:
+  role_name: uac
+  author: shieldbuntu
+  description: sudo policy hardening
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: sudo policy
+  description: >-
+    Enforces a logged, time-bounded sudo policy via a managed sudoers
+    drop-in: dedicated log file, sane defaults, no password caching across
+    terminals, and a short authentication timeout.
+  category: auth
+  cis_refs:
+    - "5.3.1"
+    - "5.3.2"
+    - "5.3.3"
+    - "5.3.4"
+    - "5.3.5"
+  profiles:
+    - cis-l1
+    - cis-l2
+    - server
+    - workstation
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - sudo
+    - auth

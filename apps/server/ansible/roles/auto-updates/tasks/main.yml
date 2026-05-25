@@ -1,0 +1,21 @@
+- name: Install unattended-upgrades
+  ansible.builtin.apt:
+    name: "{{ auto_updates_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Configure APT periodic / unattended schedule
+  ansible.builtin.copy:
+    dest: "{{ auto_updates_dropin }}"
+    content: "{{ auto_updates_periodic_content }}"
+    mode: "0644"
+    owner: root
+    group: root
+
+- name: Ensure unattended-upgrades service is enabled
+  ansible.builtin.systemd:
+    name: unattended-upgrades
+    enabled: true
+    state: started
+  failed_when: false

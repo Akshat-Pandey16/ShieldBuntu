@@ -1,0 +1,8 @@
+- name: Write ShieldBuntu sudoers drop-in
+  ansible.builtin.copy:
+    dest: "{{ uac_sudoers_dropin }}"
+    content: "{{ uac_sudoers_content }}"
+    mode: "0440"
+    owner: root
+    group: root
+    validate: "visudo -cf %s"

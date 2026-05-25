@@ -1,0 +1,2 @@
+session_timeout_seconds: 900
+session_timeout_dropin: /etc/profile.d/99-shieldbuntu-tmout.sh

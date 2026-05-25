@@ -1,0 +1,19 @@
+fail2ban_jail_file: /etc/fail2ban/jail.d/shieldbuntu.local
+
+fail2ban_ssh_bantime: "1h"
+fail2ban_ssh_findtime: "10m"
+fail2ban_ssh_maxretry: 5
+
+fail2ban_jail_content: |
+  [DEFAULT]
+  banaction = ufw
+  banaction_allports = ufw
+
+  [sshd]
+  enabled = true
+  port    = ssh
+  filter  = sshd
+  logpath = /var/log/auth.log
+  maxretry = {{ fail2ban_ssh_maxretry }}
+  findtime = {{ fail2ban_ssh_findtime }}
+  bantime  = {{ fail2ban_ssh_bantime }}

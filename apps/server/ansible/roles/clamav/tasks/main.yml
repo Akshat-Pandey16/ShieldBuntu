@@ -1,0 +1,31 @@
+- name: Install ClamAV packages
+  ansible.builtin.apt:
+    name: "{{ clamav_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Stop freshclam before manual signature refresh
+  ansible.builtin.systemd:
+    name: clamav-freshclam
+    state: stopped
+  failed_when: false
+
+- name: Refresh ClamAV signatures
+  ansible.builtin.command: freshclam --quiet
+  register: clamav_freshclam
+  changed_when: "'is up to date' not in clamav_freshclam.stdout"
+  failed_when: clamav_freshclam.rc not in [0, 1]
+
+- name: Enable freshclam updater service
+  ansible.builtin.systemd:
+    name: clamav-freshclam
+    enabled: true
+    state: started
+
+- name: Manage clamav-daemon according to preference
+  ansible.builtin.systemd:
+    name: clamav-daemon
+    enabled: "{{ clamav_enable_daemon }}"
+    state: "{{ 'started' if clamav_enable_daemon else 'stopped' }}"
+  failed_when: false

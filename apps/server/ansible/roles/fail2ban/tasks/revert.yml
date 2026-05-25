@@ -1,0 +1,8 @@
+- name: Remove ShieldBuntu jail config
+  ansible.builtin.file:
+    path: "{{ fail2ban_jail_file }}"
+    state: absent
+  notify: restart fail2ban
+
+- name: Flush fail2ban handlers
+  ansible.builtin.meta: flush_handlers

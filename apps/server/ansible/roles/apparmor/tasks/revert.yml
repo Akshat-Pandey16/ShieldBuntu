@@ -1,0 +1,12 @@
+- name: Switch all loaded profiles to complain mode
+  ansible.builtin.command: aa-complain /etc/apparmor.d/*
+  register: apparmor_complain
+  changed_when: "'Setting' in apparmor_complain.stdout"
+  failed_when: false
+
+- name: Disable AppArmor service
+  ansible.builtin.systemd:
+    name: apparmor
+    enabled: false
+    state: stopped
+  failed_when: false
