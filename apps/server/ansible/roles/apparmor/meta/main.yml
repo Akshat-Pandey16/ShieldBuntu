@@ -3,33 +3,8 @@ galaxy_info:
   author: shieldbuntu
   description: AppArmor LSM enforcement
   license: TBD
-  min_ansible_version: "2.16"
+  min_ansible_version: '2.16'
   platforms:
-    - name: Ubuntu
-      versions:
-        - noble
-
-shieldbuntu:
-  name: AppArmor
-  description: >-
-    Enables the AppArmor Linux Security Module, installs profile utilities,
-    and puts shipped profiles into enforce mode.
-  category: lsm
-  cis_refs:
-    - "1.7.1.1"
-    - "1.7.1.2"
-    - "1.7.1.3"
-    - "1.7.1.4"
-  profiles:
-    - cis-l1
-    - cis-l2
-    - server
-    - workstation
-  capabilities:
-    - apply
-    - check
-    - revert
-  requires_root: true
-  tags:
-    - apparmor
-    - lsm
+  - name: Ubuntu
+    versions:
+    - noble

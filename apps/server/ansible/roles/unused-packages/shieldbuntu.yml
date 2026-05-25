@@ -1,0 +1,17 @@
+name: Unused packages
+description: Removes packages installed as dependencies that are no longer needed,
+  then runs apt clean to free disk and reduce attack surface.
+category: packages
+cis_refs: []
+profiles:
+- cis-l1
+- cis-l2
+- server
+- workstation
+capabilities:
+- apply
+- check
+requires_root: true
+tags:
+- apt
+- cleanup

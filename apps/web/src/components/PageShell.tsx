@@ -3,12 +3,14 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
 
+import type { BreadcrumbItem } from "@/components/Breadcrumb";
 import { CommandPalette } from "@/components/CommandPalette";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
-import { logout, meQueryKey, setUser, type User } from "@/lib/auth";
-import type { BreadcrumbItem } from "@/components/Breadcrumb";
+import { UnprivilegedBanner } from "@/components/UnprivilegedBanner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { api } from "@/lib/api";
+import { fetchMe, logout, meQueryKey, setUser, type User } from "@/lib/auth";
 
 interface PageShellProps {
   children: ReactNode;
@@ -16,7 +18,17 @@ interface PageShellProps {
 }
 
 export function PageShell({ children, breadcrumb }: PageShellProps) {
-  const { data: user } = useQuery<User | null>({ queryKey: meQueryKey });
+  const { data: user } = useQuery<User | null>({
+    queryKey: meQueryKey,
+    queryFn: fetchMe,
+    staleTime: 60_000,
+  });
+  const { data: health } = useQuery({
+    queryKey: ["health"],
+    queryFn: async () => (await api.GET("/api/health", {})).data ?? null,
+    staleTime: 30_000,
+    enabled: !!user,
+  });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -57,6 +69,9 @@ export function PageShell({ children, breadcrumb }: PageShellProps) {
             transition={{ duration: 0.18, ease: "easeOut" }}
             className="mx-auto max-w-6xl space-y-6 p-6 lg:p-10"
           >
+            {health && !health.running_as_root && (
+              <UnprivilegedBanner daemonUser={health.daemon_user} />
+            )}
             {children}
           </motion.main>
         </div>

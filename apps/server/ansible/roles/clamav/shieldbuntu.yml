@@ -1,0 +1,17 @@
+name: ClamAV
+description: Installs ClamAV plus the freshclam signature updater, runs an initial
+  signature refresh, and enables the freshclam service for ongoing updates.
+category: malware-scanner
+cis_refs: []
+profiles:
+- cis-l2
+- workstation
+capabilities:
+- apply
+- check
+- revert
+requires_root: true
+tags:
+- clamav
+- malware-scanner
+- antivirus

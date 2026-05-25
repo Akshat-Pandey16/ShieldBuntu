@@ -8,17 +8,27 @@ from fastapi import HTTPException
 
 from shieldbuntu.models.task import TaskMetadata
 
+_METADATA_FILENAME = "shieldbuntu.yml"
+_LEGACY_METADATA_KEY = "shieldbuntu"
+
 
 def _read_role_metadata(role_dir: Path) -> TaskMetadata | None:
-    meta_file = role_dir / "meta" / "main.yml"
-    if not meta_file.exists():
-        return None
-    raw = yaml.safe_load(meta_file.read_text()) or {}
-    sb_meta = raw.get("shieldbuntu")
-    if not sb_meta:
-        return None
-    sb_meta.setdefault("id", role_dir.name)
-    return TaskMetadata.model_validate(sb_meta)
+    sb_file = role_dir / _METADATA_FILENAME
+    if sb_file.exists():
+        raw = yaml.safe_load(sb_file.read_text()) or {}
+        if not raw:
+            return None
+        raw.setdefault("id", role_dir.name)
+        return TaskMetadata.model_validate(raw)
+
+    legacy_meta = role_dir / "meta" / "main.yml"
+    if legacy_meta.exists():
+        legacy = yaml.safe_load(legacy_meta.read_text()) or {}
+        sb_meta = legacy.get(_LEGACY_METADATA_KEY)
+        if sb_meta:
+            sb_meta.setdefault("id", role_dir.name)
+            return TaskMetadata.model_validate(sb_meta)
+    return None
 
 
 def discover_tasks(roles_root: Path) -> list[TaskMetadata]:
@@ -43,7 +53,7 @@ def discover_tasks_cached(roles_root: Path) -> list[TaskMetadata]:
     if not roles_root.exists():
         return []
     mtime = max(
-        (p.stat().st_mtime for p in roles_root.rglob("meta/main.yml")),
+        (p.stat().st_mtime for p in roles_root.rglob(_METADATA_FILENAME)),
         default=0.0,
     )
     return list(_cached_discover(str(roles_root), mtime))

@@ -204,13 +204,13 @@ function StatCard({ Icon, label, value, hint, accent, pulse, delay = 0 }: StatCa
     >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-2">
-          <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest">
+          <div className="text-muted-foreground text-xs font-medium uppercase tracking-widest">
             {label}
-          </p>
-          <p className="text-foreground text-3xl font-semibold tabular-nums tracking-tight">
+          </div>
+          <div className="text-foreground text-3xl font-semibold tabular-nums tracking-tight">
             {value || <Skeleton className="h-9 w-16" />}
-          </p>
-          <p className="text-muted-foreground text-xs">{hint}</p>
+          </div>
+          <div className="text-muted-foreground text-xs">{hint}</div>
         </div>
         <div
           className={cn(

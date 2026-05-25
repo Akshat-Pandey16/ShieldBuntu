@@ -286,6 +286,10 @@ export interface components {
             status: string;
             /** Version */
             version: string;
+            /** Running As Root */
+            running_as_root: boolean;
+            /** Daemon User */
+            daemon_user: string;
         };
         /** LoginRequest */
         LoginRequest: {

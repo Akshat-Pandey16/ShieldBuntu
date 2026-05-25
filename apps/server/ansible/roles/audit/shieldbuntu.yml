@@ -1,0 +1,20 @@
+name: Audit (auditd)
+description: Installs auditd plus a baseline ruleset that watches sensitive system
+  files (passwd, shadow, sudoers) and key syscalls.
+category: audit
+cis_refs:
+- 4.1.1.1
+- 4.1.1.2
+- 4.1.2.1
+- 4.1.3.1
+profiles:
+- cis-l2
+- server
+capabilities:
+- apply
+- check
+- revert
+requires_root: true
+tags:
+- audit
+- auditd

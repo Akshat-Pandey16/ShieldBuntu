@@ -18,7 +18,7 @@ import { requireAuth } from "@/lib/auth-guard";
 import { formatDuration, formatTimestamp } from "@/lib/format";
 import { useRunStream } from "@/lib/useRunStream";
 
-export const Route = createFileRoute("/runs/$runId")({
+export const Route = createFileRoute("/runs_/$runId")({
   beforeLoad: ({ context, location }) => requireAuth(context.queryClient, location.href),
   component: RunDetailPage,
 });

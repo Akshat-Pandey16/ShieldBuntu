@@ -5,13 +5,13 @@ export LANG ?= C.UTF-8
 export LC_ALL ?= C.UTF-8
 
 .PHONY: help install install-hooks ansible-deps \
-        dev dev-server dev-web \
+        dev dev-server sudo-server dev-web \
         lint lint-fix format format-check typecheck \
         gen-api \
         db-init db-migrate db-migration db-downgrade db-history db-current db-reset db-truncate db-shell \
         deps-outdated deps-upgrade deps-upgrade-server deps-upgrade-web deps-lock \
         build build-server build-web \
-        clean distclean
+        clean clean-runs distclean
 
 help: ## show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
@@ -34,8 +34,17 @@ dev: ## run backend + frontend dev servers (Ctrl-C stops both)
 	(cd apps/web && pnpm dev --port 5173) & \
 	wait
 
-dev-server: ## backend only (uvicorn :8000) — run with sudo for real hardening
+dev-server: ## backend only (uvicorn :8000) — run as your user (apply/revert will need sudo)
 	cd apps/server && uv run uvicorn shieldbuntu.main:app --reload --port 8000
+
+sudo-server: ## backend with root privileges so apply/revert actually work
+	@if [ "$$(id -u)" -eq 0 ]; then \
+		echo "Already root — use make dev-server instead."; exit 1; \
+	fi
+	@UV_PATH=$$(command -v uv); \
+	if [ -z "$$UV_PATH" ]; then echo "uv not found in your PATH."; exit 1; fi; \
+	echo "Re-launching as root with uv at $$UV_PATH …"; \
+	cd apps/server && sudo -E env "PATH=$$PATH" "$$UV_PATH" run uvicorn shieldbuntu.main:app --reload --port 8000
 
 dev-web: ## frontend only (vite :5173)
 	cd apps/web && pnpm dev --port 5173
@@ -123,10 +132,13 @@ build-web: ## build frontend production bundle
 	cd apps/web && pnpm build
 
 clean: ## remove generated artifacts (keeps .venv + node_modules)
-	rm -rf apps/server/dist apps/server/.ruff_cache apps/server/var/shieldbuntu.db*
+	rm -rf apps/server/dist apps/server/.ruff_cache apps/server/var
 	rm -rf apps/web/dist apps/web/.vite apps/web/.tsbuildinfo apps/web/tsconfig*.tsbuildinfo
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
-distclean: clean ## remove EVERYTHING including .venv + node_modules
+clean-runs: clean## delete cached ansible-runner per-run directories under apps/server/var/runs (keeps the db)
+	rm -rf apps/server/var/runs
+
+distclean: clean-runs ## remove EVERYTHING including .venv + node_modules
 	rm -rf apps/server/.venv
 	rm -rf apps/web/node_modules

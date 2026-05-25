@@ -56,6 +56,9 @@ Thumbs.db
 *.db-wal
 *.db-shm
 
+# Runtime data (sqlite db + per-run ansible artifacts)
+apps/server/var/
+
 # Ansible runtime
 *.retry
 apps/server/ansible/artifacts/

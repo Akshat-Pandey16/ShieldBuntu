@@ -1,0 +1,17 @@
+name: Rootkit Hunter
+description: Installs rkhunter, updates its database, and enables daily root-owned
+  scans via the system cron.
+category: malware-scanner
+cis_refs: []
+profiles:
+- cis-l2
+- server
+- workstation
+capabilities:
+- apply
+- check
+- revert
+requires_root: true
+tags:
+- rkhunter
+- malware-scanner

@@ -1,0 +1,18 @@
+name: USB device control
+description: Installs usbguard, captures a baseline policy of currently-connected
+  USB devices as the allowlist, and enables enforcement on future inserts.
+category: peripherals
+cis_refs: []
+profiles:
+- cis-l2
+- server
+- workstation
+capabilities:
+- apply
+- check
+- revert
+requires_root: true
+tags:
+- usb
+- usbguard
+- peripherals

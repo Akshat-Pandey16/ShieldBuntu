@@ -1,0 +1,17 @@
+name: Fail2Ban
+description: Installs Fail2Ban and writes an SSH jail that bans IPs after repeated
+  auth failures.
+category: intrusion-prevention
+cis_refs: []
+profiles:
+- cis-l2
+- server
+capabilities:
+- apply
+- check
+- revert
+requires_root: true
+tags:
+- fail2ban
+- intrusion-prevention
+- ssh

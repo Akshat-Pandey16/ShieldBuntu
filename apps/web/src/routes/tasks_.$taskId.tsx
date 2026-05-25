@@ -13,7 +13,7 @@ import { api } from "@/lib/api";
 import { requireAuth } from "@/lib/auth-guard";
 import { formatDuration, formatTimestamp, titleCase } from "@/lib/format";
 
-export const Route = createFileRoute("/tasks/$taskId")({
+export const Route = createFileRoute("/tasks_/$taskId")({
   beforeLoad: ({ context, location }) => requireAuth(context.queryClient, location.href),
   component: TaskDetailPage,
 });
