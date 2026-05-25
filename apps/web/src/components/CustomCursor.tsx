@@ -14,6 +14,10 @@ export function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const [enabled, setEnabled] = useState(() => {
     if (typeof window === "undefined") return false;
+    const coarse =
+      window.matchMedia &&
+      window.matchMedia("(pointer: coarse), (hover: none)").matches;
+    if (coarse) return false;
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
       return stored === null ? true : stored === "1";
@@ -28,21 +32,17 @@ export function CustomCursor() {
       setEnabled(detail);
     };
     window.addEventListener(PREF_EVENT, onPref);
-    return () => window.removeEventListener(PREF_EVENT, onPref);
-  }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
     const coarse = window.matchMedia("(pointer: coarse), (hover: none)");
-    if (coarse.matches) {
-      setEnabled(false);
-      return;
-    }
-    const onChange = () => {
+    const onCoarse = () => {
       if (coarse.matches) setEnabled(false);
     };
-    coarse.addEventListener("change", onChange);
-    return () => coarse.removeEventListener("change", onChange);
+    coarse.addEventListener("change", onCoarse);
+
+    return () => {
+      window.removeEventListener(PREF_EVENT, onPref);
+      coarse.removeEventListener("change", onCoarse);
+    };
   }, []);
 
   useEffect(() => {
