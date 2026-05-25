@@ -13,6 +13,10 @@ from shieldbuntu.api.tasks import router as tasks_router
 from shieldbuntu.core.config import get_settings
 from shieldbuntu.core.db import dispose_db, init_db
 from shieldbuntu.core.logging import configure_logging, get_logger
+from shieldbuntu.core.startup import (
+    reclaim_data_dir_ownership,
+    run_pending_migrations,
+)
 
 
 @asynccontextmanager
@@ -20,8 +24,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     configure_logging(json_logs=not settings.dev_mode, level=settings.log_level)
-    init_db(settings.database_url)
     log = get_logger(__name__)
+    run_pending_migrations()
+    init_db(settings.database_url)
+    reclaim_data_dir_ownership()
     log.info("shieldbuntu.startup", version=__version__, dev_mode=settings.dev_mode)
     try:
         yield
