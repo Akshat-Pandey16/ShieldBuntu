@@ -1,0 +1,7 @@
+- name: Disable ufw
+  community.general.ufw:
+    state: disabled
+
+- name: Reset ufw rules
+  community.general.ufw:
+    state: reset

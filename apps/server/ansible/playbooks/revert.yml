@@ -1,0 +1,11 @@
+- name: Revert hardening role
+  hosts: local
+  become: true
+  gather_facts: true
+  vars:
+    task_role: "{{ task_role | mandatory }}"
+  tasks:
+    - name: Include role revert tasks
+      ansible.builtin.include_role:
+        name: "{{ task_role }}"
+        tasks_from: revert

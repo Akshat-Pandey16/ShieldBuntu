@@ -1,5 +1,3 @@
-"""Application settings, loaded from env or .env file."""
-
 from __future__ import annotations
 
 from functools import lru_cache
@@ -20,20 +18,21 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Server
     host: str = "127.0.0.1"
     port: int = 8000
     dev_mode: bool = True
     log_level: LogLevel = "INFO"
 
-    # Paths (overridden in the .deb install to /var/lib/shieldbuntu etc.)
     data_dir: Path = Field(default_factory=lambda: Path.cwd() / "var")
     ansible_root: Path = Field(default_factory=lambda: Path.cwd() / "ansible")
 
-    # Database
     @property
     def database_url(self) -> str:
         return f"sqlite+aiosqlite:///{self.data_dir / 'shieldbuntu.db'}"
+
+    @property
+    def sync_database_url(self) -> str:
+        return f"sqlite:///{self.data_dir / 'shieldbuntu.db'}"
 
 
 @lru_cache(maxsize=1)

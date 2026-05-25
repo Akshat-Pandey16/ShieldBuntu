@@ -1,0 +1,48 @@
+galaxy_info:
+  role_name: ssh
+  author: shieldbuntu
+  description: SSH server hardening
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: SSH hardening
+  description: >-
+    Hardens sshd_config: disables root login, password auth, X11/agent
+    forwarding; tightens auth tries and session timeouts; validates config
+    before reload.
+  category: ssh
+  cis_refs:
+    - "5.2.1"
+    - "5.2.2"
+    - "5.2.3"
+    - "5.2.4"
+    - "5.2.5"
+    - "5.2.6"
+    - "5.2.7"
+    - "5.2.8"
+    - "5.2.9"
+    - "5.2.10"
+    - "5.2.11"
+    - "5.2.12"
+    - "5.2.13"
+    - "5.2.14"
+    - "5.2.15"
+    - "5.2.16"
+    - "5.2.17"
+  profiles:
+    - cis-l1
+    - cis-l2
+    - server
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - ssh
+    - sshd

@@ -1,0 +1,14 @@
+- name: Check hardening role (read-only)
+  hosts: local
+  become: true
+  gather_facts: false
+  vars:
+    task_role: "{{ task_role | mandatory }}"
+  tasks:
+    - name: Include role apply tasks in check mode
+      block:
+        - ansible.builtin.include_role:
+            name: "{{ task_role }}"
+            tasks_from: main
+      check_mode: true
+      diff: true

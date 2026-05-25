@@ -1,0 +1,39 @@
+galaxy_info:
+  role_name: firewall
+  author: shieldbuntu
+  description: UFW-based firewall hardening
+  license: TBD
+  min_ansible_version: "2.16"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+
+shieldbuntu:
+  name: Firewall
+  description: >-
+    Installs and configures UFW: deny incoming by default, allow outgoing,
+    permit configured ports (SSH by default). Idempotent.
+  category: network
+  cis_refs:
+    - "3.5.1.1"
+    - "3.5.1.2"
+    - "3.5.1.3"
+    - "3.5.1.4"
+    - "3.5.1.5"
+    - "3.5.1.6"
+    - "3.5.1.7"
+  profiles:
+    - cis-l1
+    - cis-l2
+    - server
+    - workstation
+  capabilities:
+    - apply
+    - check
+    - revert
+  requires_root: true
+  tags:
+    - firewall
+    - ufw
+    - network

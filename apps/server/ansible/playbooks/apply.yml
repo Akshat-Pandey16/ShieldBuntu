@@ -1,0 +1,11 @@
+- name: Apply hardening role
+  hosts: local
+  become: true
+  gather_facts: true
+  vars:
+    task_role: "{{ task_role | mandatory }}"
+  tasks:
+    - name: Include role apply tasks
+      ansible.builtin.include_role:
+        name: "{{ task_role }}"
+        tasks_from: main

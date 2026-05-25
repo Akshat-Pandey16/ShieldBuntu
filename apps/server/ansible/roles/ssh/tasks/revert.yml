@@ -1,0 +1,25 @@
+- name: Check for SSH backup file
+  ansible.builtin.stat:
+    path: "{{ ssh_backup_file }}"
+  register: ssh_backup_stat
+
+- name: Fail if no backup found
+  ansible.builtin.fail:
+    msg: "No SSH backup at {{ ssh_backup_file }} — cannot revert"
+  when: not ssh_backup_stat.stat.exists
+
+- name: Restore sshd_config from snapshot
+  ansible.builtin.copy:
+    src: "{{ ssh_backup_file }}"
+    dest: "{{ ssh_config_file }}"
+    remote_src: true
+    mode: "0600"
+    owner: root
+    group: root
+    validate: "sshd -t -f %s"
+  notify: reload sshd
+
+- name: Remove backup file after restore
+  ansible.builtin.file:
+    path: "{{ ssh_backup_file }}"
+    state: absent

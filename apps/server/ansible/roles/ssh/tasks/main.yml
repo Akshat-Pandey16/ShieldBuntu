@@ -1,0 +1,32 @@
+- name: Verify sshd_config exists
+  ansible.builtin.stat:
+    path: "{{ ssh_config_file }}"
+  register: ssh_config_stat
+
+- name: Fail if sshd_config is missing
+  ansible.builtin.fail:
+    msg: "{{ ssh_config_file }} not found — is openssh-server installed?"
+  when: not ssh_config_stat.stat.exists
+
+- name: Snapshot sshd_config before modification
+  ansible.builtin.copy:
+    src: "{{ ssh_config_file }}"
+    dest: "{{ ssh_backup_file }}"
+    remote_src: true
+    force: false
+    mode: "0600"
+    owner: root
+    group: root
+
+- name: Apply SSH hardening settings
+  ansible.builtin.lineinfile:
+    path: "{{ ssh_config_file }}"
+    regexp: '^[#\s]*{{ item.key }}\s+.*$'
+    line: "{{ item.key }} {{ item.value }}"
+    state: present
+    validate: "sshd -t -f %s"
+    backup: false
+  loop: "{{ ssh_settings | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  notify: reload sshd

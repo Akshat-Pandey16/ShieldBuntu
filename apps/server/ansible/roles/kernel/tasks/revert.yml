@@ -1,0 +1,10 @@
+- name: Remove ShieldBuntu sysctl override file
+  ansible.builtin.file:
+    path: "{{ kernel_sysctl_file }}"
+    state: absent
+  register: kernel_revert_removed
+
+- name: Reload sysctl after removing overrides
+  ansible.builtin.command:
+    cmd: sysctl --system
+  changed_when: kernel_revert_removed.changed
