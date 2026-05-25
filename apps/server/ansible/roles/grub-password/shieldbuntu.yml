@@ -1,7 +1,7 @@
 name: GRUB password
 description: Sets a PBKDF2 password on the GRUB bootloader so unauthenticated users
-  can't edit kernel command-line parameters at boot. Requires grub_password_plain
-  in extra-vars (UI prompts for it).
+  can't edit kernel command-line parameters at boot. UI collects the password via
+  the declared `grub_password_plain` input.
 category: bootloader
 cis_refs:
 - 1.4.1
@@ -12,9 +12,15 @@ profiles:
 - server
 capabilities:
 - apply
-- check
 - revert
 requires_root: true
 tags:
 - grub
 - bootloader
+inputs:
+- name: grub_password_plain
+  label: GRUB superuser password
+  description: Password assigned to the GRUB superuser; required to edit boot
+    parameters at boot time.
+  secret: true
+  required: true

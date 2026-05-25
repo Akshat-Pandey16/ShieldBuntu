@@ -1,6 +1,7 @@
 name: Firewall
 description: 'Installs and configures UFW: deny incoming by default, allow outgoing,
-  permit configured ports (SSH by default). Idempotent.'
+  permit configured ports (SSH by default). Idempotent. Revert disables ufw; pass
+  firewall_revert_reset=true to also wipe all rules (destructive).'
 category: network
 cis_refs:
 - 3.5.1.1

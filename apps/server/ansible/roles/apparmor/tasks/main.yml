@@ -11,11 +11,33 @@
     enabled: true
     state: started
 
-- name: Enable AppArmor on the kernel cmdline
+- name: Read current GRUB_CMDLINE_LINUX value
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      grep -E '^GRUB_CMDLINE_LINUX=' {{ apparmor_grub_file }} \
+        | sed -E 's/^GRUB_CMDLINE_LINUX="(.*)"$/\1/' || true
+  args:
+    executable: /bin/bash
+  register: apparmor_grub_current
+  changed_when: false
+
+- name: Compute merged cmdline token list
+  ansible.builtin.set_fact:
+    apparmor_grub_tokens: >-
+      {{
+        (apparmor_grub_current.stdout | default('') | split + apparmor_required_cmdline)
+        | reject('equalto', '')
+        | unique
+        | list
+      }}
+
+- name: Enable AppArmor on the kernel cmdline (merge with existing tokens)
   ansible.builtin.lineinfile:
     path: "{{ apparmor_grub_file }}"
-    regexp: '^GRUB_CMDLINE_LINUX="(.*)"$'
-    line: 'GRUB_CMDLINE_LINUX="{{ (apparmor_required_cmdline | join('' '')) }}"'
+    regexp: '^GRUB_CMDLINE_LINUX=".*"$'
+    line: 'GRUB_CMDLINE_LINUX="{{ apparmor_grub_tokens | join('' '') }}"'
+    create: true
     backrefs: false
   register: apparmor_grub_updated
 

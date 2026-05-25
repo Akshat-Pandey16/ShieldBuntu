@@ -1,7 +1,15 @@
+- name: Warn that revert will reset any custom ufw rules
+  ansible.builtin.debug:
+    msg: >-
+      Reverting the firewall role disables ufw. With
+      firewall_revert_reset=true (default false) it also runs `ufw reset`,
+      which wipes ALL rules — including ones not added by ShieldBuntu.
+
 - name: Disable ufw
   community.general.ufw:
     state: disabled
 
-- name: Reset ufw rules
+- name: Reset ufw rules (only when explicitly opted in)
   community.general.ufw:
     state: reset
+  when: firewall_revert_reset | bool

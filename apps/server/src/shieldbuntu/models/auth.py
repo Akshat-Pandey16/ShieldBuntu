@@ -1,8 +1,10 @@
 from datetime import UTC, datetime, timedelta
+from typing import Final
 
 from sqlmodel import Field, SQLModel
 
-SESSION_TTL = timedelta(hours=8)
+SESSION_TTL: Final = timedelta(hours=8)
+SESSION_REFRESH_THRESHOLD: Final = timedelta(hours=1)
 
 
 def _utc_now() -> datetime:
@@ -35,3 +37,7 @@ class AuthSession(SQLModel, table=True):
     @property
     def aware_last_seen_at(self) -> datetime:
         return _as_aware(self.last_seen_at)
+
+    @property
+    def aware_expires_at(self) -> datetime:
+        return _as_aware(self.expires_at)

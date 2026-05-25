@@ -6,11 +6,12 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-import shieldbuntu.models
+import shieldbuntu.models  # noqa: F401
 
 
 @dataclass
@@ -22,8 +23,32 @@ class _DBState:
 _state = _DBState()
 
 
+def _attach_sqlite_pragmas(engine: AsyncEngine) -> None:
+    @event.listens_for(engine.sync_engine, "connect")
+    def _set_pragmas(dbapi_conn: object, _: object) -> None:
+        cursor = dbapi_conn.cursor()
+        try:
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA synchronous=NORMAL")
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.execute("PRAGMA busy_timeout=5000")
+        finally:
+            cursor.close()
+
+
 def init_db(database_url: str) -> None:
-    _state.engine = create_async_engine(database_url, future=True, echo=False)
+    is_sqlite = database_url.startswith("sqlite")
+    connect_args: dict[str, object] = (
+        {"check_same_thread": False, "timeout": 30} if is_sqlite else {}
+    )
+    _state.engine = create_async_engine(
+        database_url,
+        future=True,
+        echo=False,
+        connect_args=connect_args,
+    )
+    if is_sqlite:
+        _attach_sqlite_pragmas(_state.engine)
     _state.sessionmaker = async_sessionmaker(
         _state.engine, expire_on_commit=False, class_=AsyncSession
     )

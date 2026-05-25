@@ -6,7 +6,7 @@ from shieldbuntu.models.run import (
     RunAction,
     RunStatus,
 )
-from shieldbuntu.models.task import Profile, TaskCapability, TaskMetadata
+from shieldbuntu.models.task import Profile, TaskInputSpec, TaskMetadata
 
 __all__ = [
     "AuthSession",
@@ -16,6 +16,6 @@ __all__ = [
     "Profile",
     "RunAction",
     "RunStatus",
-    "TaskCapability",
+    "TaskInputSpec",
     "TaskMetadata",
 ]

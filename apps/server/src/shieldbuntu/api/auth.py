@@ -19,15 +19,33 @@ class UserResponse(BaseModel):
     username: str
 
 
+def _client_ip(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
+
+
 @router.post("/login", response_model=UserResponse)
 async def login(body: LoginRequest, request: Request, response: Response) -> UserResponse:
     settings = get_settings()
-    if not _auth.verify_credentials(body.username, body.password):
+    ip = _client_ip(request)
+    throttle_key = f"{ip}|{body.username.lower()}"
+
+    wait = await _auth.check_throttle(throttle_key)
+    if wait > 0:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many login attempts; retry after {int(wait)}s",
+            headers={"Retry-After": str(int(wait))},
+        )
+
+    valid = _auth.verify_credentials(body.username, body.password)
+    if not valid or not _auth.is_authorized(body.username):
+        await _auth.record_failure(throttle_key)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
+    await _auth.record_success(throttle_key)
     sess = await _auth.create_session(
         body.username,
-        ip_address=request.client.host if request.client else None,
+        ip_address=ip if ip != "unknown" else None,
         user_agent=request.headers.get("user-agent"),
     )
     _auth.set_session_cookie(response, sess.token, secure=not settings.dev_mode)

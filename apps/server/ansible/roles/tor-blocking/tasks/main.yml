@@ -4,20 +4,68 @@
     state: directory
     mode: "0755"
 
+- name: Stat previous Tor exit node list
+  ansible.builtin.stat:
+    path: "{{ tor_blocking_local_list }}"
+  register: tor_blocking_prev_stat
+
+- name: Read previous Tor exit IP list (if any)
+  ansible.builtin.slurp:
+    src: "{{ tor_blocking_local_list }}"
+  when: tor_blocking_prev_stat.stat.exists
+  register: tor_blocking_prev_raw
+
+- name: Parse previous Tor exit IP list
+  ansible.builtin.set_fact:
+    tor_blocking_prev_ips: >-
+      {{
+        ((tor_blocking_prev_raw.content | b64decode) if tor_blocking_prev_raw.content is defined else '')
+        | string
+        | splitlines
+        | map('trim')
+        | reject('match', '^\\s*$')
+        | reject('match', '^#')
+        | list
+      }}
+
 - name: Fetch current Tor exit node list
   ansible.builtin.get_url:
     url: "{{ tor_blocking_exit_list_url }}"
-    dest: "{{ tor_blocking_local_list }}"
+    dest: "{{ tor_blocking_local_list }}.new"
     mode: "0644"
     force: true
     timeout: 30
+  register: tor_blocking_fetch
+  failed_when: false
 
-- name: Read fetched Tor exit IPs
+- name: Skip remainder when fetch failed and no prior list exists
+  ansible.builtin.meta: end_play
+  when: tor_blocking_fetch.failed | default(false) and not tor_blocking_prev_stat.stat.exists
+
+- name: Reuse previous list when fetch failed
+  ansible.builtin.debug:
+    msg: "tor-blocking: fetch failed, keeping previously-applied rules"
+  when: tor_blocking_fetch.failed | default(false) and tor_blocking_prev_stat.stat.exists
+
+- name: Promote fresh list when fetch succeeded
+  ansible.builtin.copy:
+    src: "{{ tor_blocking_local_list }}.new"
+    dest: "{{ tor_blocking_local_list }}"
+    remote_src: true
+    mode: "0644"
+  when: not (tor_blocking_fetch.failed | default(false))
+
+- name: Drop staging file
+  ansible.builtin.file:
+    path: "{{ tor_blocking_local_list }}.new"
+    state: absent
+
+- name: Read current Tor exit IP list
   ansible.builtin.slurp:
     src: "{{ tor_blocking_local_list }}"
   register: tor_blocking_raw
 
-- name: Parse exit IP list
+- name: Parse current exit IP list
   ansible.builtin.set_fact:
     tor_blocking_ips: >-
       {{
@@ -28,12 +76,28 @@
         | list
       }}
 
-- name: Deny inbound traffic from each Tor exit IP via ufw
+- name: Compute added and removed IPs
+  ansible.builtin.set_fact:
+    tor_blocking_added: "{{ tor_blocking_ips | difference(tor_blocking_prev_ips | default([])) }}"
+    tor_blocking_removed: "{{ (tor_blocking_prev_ips | default([])) | difference(tor_blocking_ips) }}"
+
+- name: Remove ufw deny rules for IPs no longer on the list
+  community.general.ufw:
+    rule: deny
+    direction: in
+    src: "{{ item }}"
+    delete: true
+  loop: "{{ tor_blocking_removed }}"
+  loop_control:
+    label: "{{ item }}"
+  failed_when: false
+
+- name: Deny inbound traffic from new Tor exit IPs via ufw
   community.general.ufw:
     rule: deny
     direction: in
     src: "{{ item }}"
     comment: "{{ tor_blocking_rule_comment }}"
-  loop: "{{ tor_blocking_ips }}"
+  loop: "{{ tor_blocking_added }}"
   loop_control:
     label: "{{ item }}"

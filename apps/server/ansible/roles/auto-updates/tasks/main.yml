@@ -13,6 +13,14 @@
     owner: root
     group: root
 
+- name: Configure unattended-upgrades allowed origins / policies
+  ansible.builtin.copy:
+    dest: "{{ auto_updates_policy_dropin }}"
+    content: "{{ auto_updates_policy_content }}"
+    mode: "0644"
+    owner: root
+    group: root
+
 - name: Ensure unattended-upgrades service is enabled
   ansible.builtin.systemd:
     name: unattended-upgrades

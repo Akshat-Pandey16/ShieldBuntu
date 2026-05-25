@@ -21,10 +21,7 @@ dependencies = [
   "ansible-core>=2.21.0",
   "structlog>=25.5.0",
   "uvicorn[standard]>=0.48.0",
-  "httpx>=0.28.1",
   "pamela>=1.2.0",
-  "bcrypt>=5.0.0",
-  "itsdangerous>=2.2.0",
   "sse-starlette>=3.4.4",
 ]
 
@@ -79,8 +76,6 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"src/shieldbuntu/core/db.py" = ["F401"]
-"src/shieldbuntu/engine/orchestrator.py" = ["PLR0915"]
 "alembic/env.py" = ["F401", "E402"]
 "alembic/versions/*.py" = ["E501", "D"]
 

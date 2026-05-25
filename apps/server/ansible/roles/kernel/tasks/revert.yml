@@ -4,7 +4,25 @@
     state: absent
   register: kernel_revert_removed
 
-- name: Reload sysctl after removing overrides
+- name: Reset hardened sysctl keys to kernel defaults at runtime
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_set: true
+    sysctl_file: /etc/sysctl.d/00-shieldbuntu-revert.conf
+    reload: false
+  loop: "{{ kernel_revert_defaults | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  failed_when: false
+
+- name: Drop the temporary revert overlay
+  ansible.builtin.file:
+    path: /etc/sysctl.d/00-shieldbuntu-revert.conf
+    state: absent
+
+- name: Reload sysctl after revert
   ansible.builtin.command:
     cmd: sysctl --system
   changed_when: kernel_revert_removed.changed

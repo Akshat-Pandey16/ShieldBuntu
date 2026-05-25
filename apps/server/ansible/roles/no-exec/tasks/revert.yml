@@ -1,3 +1,8 @@
+- name: Stat fstab snapshot
+  ansible.builtin.stat:
+    path: "{{ no_exec_fstab_backup }}"
+  register: no_exec_backup_stat
+
 - name: Restore fstab from snapshot
   ansible.builtin.copy:
     src: "{{ no_exec_fstab_backup }}"
@@ -6,11 +11,22 @@
     mode: "0644"
     owner: root
     group: root
-  failed_when: false
+  when: no_exec_backup_stat.stat.exists
   register: no_exec_restore
 
-- name: Remount affected mountpoints
-  ansible.builtin.command: "mount -o remount {{ item.path }}"
+- name: Remove ShieldBuntu mount entries when no backup exists
+  ansible.posix.mount:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ no_exec_mounts }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: not no_exec_backup_stat.stat.exists
+  failed_when: false
+
+- name: Remount affected mountpoints (uses restored fstab opts)
+  ansible.builtin.command:
+    cmd: "mount -o remount {{ item.path }}"
   loop: "{{ no_exec_mounts }}"
   loop_control:
     label: "{{ item.path }}"
@@ -21,4 +37,4 @@
   ansible.builtin.file:
     path: "{{ no_exec_fstab_backup }}"
     state: absent
-  when: no_exec_restore is success
+  when: no_exec_restore is defined and no_exec_restore is success

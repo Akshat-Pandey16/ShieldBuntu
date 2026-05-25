@@ -10,16 +10,13 @@ from shieldbuntu.core.config import get_settings
 from shieldbuntu.core.logging import get_logger
 
 
-def _alembic_root() -> Path:
-    return Path(__file__).resolve().parent.parent.parent.parent
-
-
 def run_pending_migrations() -> None:
     log = get_logger(__name__)
-    root = _alembic_root()
+    settings = get_settings()
+    root = settings.alembic_root
     cfg = Config(str(root / "alembic.ini"))
     cfg.set_main_option("script_location", str(root / "alembic"))
-    cfg.set_main_option("sqlalchemy.url", get_settings().sync_database_url)
+    cfg.set_main_option("sqlalchemy.url", settings.sync_database_url)
     cfg.attributes["configure_logger"] = False
     log.info("db.migrate.start")
     command.upgrade(cfg, "head")
@@ -50,3 +47,27 @@ def reclaim_data_dir_ownership() -> None:
             continue
     if chowned:
         log.info("data_dir.chown", path=str(data_dir), uid=uid, gid=gid, count=chowned)
+
+
+def reclaim_path_ownership(path: os.PathLike[str] | str) -> int:
+    if os.geteuid() != 0:
+        return 0
+    sudo_uid = os.environ.get("SUDO_UID")
+    sudo_gid = os.environ.get("SUDO_GID")
+    if not sudo_uid or not sudo_gid:
+        return 0
+    uid = int(sudo_uid)
+    gid = int(sudo_gid)
+    root = Path(path)
+    if not root.exists():
+        return 0
+    chowned = 0
+    for p in [root, *root.rglob("*")]:
+        try:
+            st = p.stat()
+            if st.st_uid != uid or st.st_gid != gid:
+                os.chown(p, uid, gid)
+                chowned += 1
+        except OSError:
+            continue
+    return chowned

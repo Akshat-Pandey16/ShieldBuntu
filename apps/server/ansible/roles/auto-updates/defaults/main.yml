@@ -3,9 +3,24 @@ auto_updates_packages:
   - apt-listchanges
 
 auto_updates_dropin: /etc/apt/apt.conf.d/20shieldbuntu-auto-upgrades
+auto_updates_policy_dropin: /etc/apt/apt.conf.d/51shieldbuntu-unattended
 
 auto_updates_periodic_content: |
   APT::Periodic::Update-Package-Lists "1";
   APT::Periodic::Download-Upgradeable-Packages "1";
   APT::Periodic::AutocleanInterval "7";
   APT::Periodic::Unattended-Upgrade "1";
+
+auto_updates_policy_content: |
+  Unattended-Upgrade::Allowed-Origins {
+      "${distro_id}:${distro_codename}-security";
+      "${distro_id}ESMApps:${distro_codename}-apps-security";
+      "${distro_id}ESM:${distro_codename}-infra-security";
+  };
+  Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+  Unattended-Upgrade::MinimalSteps "true";
+  Unattended-Upgrade::InstallOnShutdown "false";
+  Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+  Unattended-Upgrade::Remove-Unused-Dependencies "true";
+  Unattended-Upgrade::Automatic-Reboot "false";
+  Unattended-Upgrade::Automatic-Reboot-Time "03:00";

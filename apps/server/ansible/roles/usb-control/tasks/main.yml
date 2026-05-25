@@ -10,6 +10,11 @@
     path: "{{ usbguard_rules_file }}"
   register: usbguard_rules_stat
 
+- name: Stat existing usbguard backup
+  ansible.builtin.stat:
+    path: "{{ usbguard_rules_backup }}"
+  register: usbguard_backup_stat
+
 - name: Snapshot current rules before regenerating
   ansible.builtin.copy:
     src: "{{ usbguard_rules_file }}"
@@ -19,13 +24,13 @@
     mode: "0600"
     owner: root
     group: root
-  when: usbguard_rules_stat.stat.exists
+  when: usbguard_rules_stat.stat.exists and not usbguard_backup_stat.stat.exists
 
-- name: Generate allowlist from currently-attached devices
+- name: Generate allowlist from currently-attached devices on first apply
   ansible.builtin.shell:
-    cmd: usbguard generate-policy > {{ usbguard_rules_file }}
-  args:
-    creates: "{{ usbguard_rules_backup }}"
+    cmd: "usbguard generate-policy > {{ usbguard_rules_file }}"
+  when: not usbguard_backup_stat.stat.exists
+  changed_when: true
 
 - name: Lock down rules file permissions
   ansible.builtin.file:

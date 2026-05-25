@@ -1,7 +1,10 @@
-- name: Remove ShieldBuntu auto-update drop-in
+- name: Remove ShieldBuntu auto-update drop-ins
   ansible.builtin.file:
-    path: "{{ auto_updates_dropin }}"
+    path: "{{ item }}"
     state: absent
+  loop:
+    - "{{ auto_updates_dropin }}"
+    - "{{ auto_updates_policy_dropin }}"
 
 - name: Disable unattended-upgrades service
   ansible.builtin.systemd:

@@ -2,6 +2,7 @@ firewall_default_incoming: deny
 firewall_default_outgoing: allow
 firewall_default_routed: deny
 firewall_logging: low
+firewall_revert_reset: false
 
 firewall_allowed_ports:
   - port: "22"

@@ -4,6 +4,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from shieldbuntu.models.run import RunAction
+
 
 class Profile(StrEnum):
     CIS_LEVEL_1 = "cis-l1"
@@ -12,10 +14,15 @@ class Profile(StrEnum):
     SERVER = "server"
 
 
-class TaskCapability(StrEnum):
-    APPLY = "apply"
-    REVERT = "revert"
-    CHECK = "check"
+class TaskInputSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    label: str
+    description: str = ""
+    secret: bool = False
+    required: bool = True
+    pattern: str | None = None
 
 
 class TaskMetadata(BaseModel):
@@ -27,8 +34,9 @@ class TaskMetadata(BaseModel):
     category: str = "general"
     cis_refs: list[str] = Field(default_factory=list)
     profiles: list[Profile] = Field(default_factory=list)
-    capabilities: list[TaskCapability] = Field(
-        default_factory=lambda: [TaskCapability.APPLY, TaskCapability.CHECK]
+    capabilities: list[RunAction] = Field(
+        default_factory=lambda: [RunAction.APPLY, RunAction.CHECK]
     )
     requires_root: bool = True
     tags: list[str] = Field(default_factory=list)
+    inputs: list[TaskInputSpec] = Field(default_factory=list)

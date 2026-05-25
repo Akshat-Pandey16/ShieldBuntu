@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from functools import lru_cache
+from dataclasses import dataclass
 from pathlib import Path
+from threading import Lock
 
 import yaml
 from fastapi import HTTPException
@@ -10,6 +11,16 @@ from shieldbuntu.models.task import TaskMetadata
 
 _METADATA_FILENAME = "shieldbuntu.yml"
 _LEGACY_METADATA_KEY = "shieldbuntu"
+
+
+@dataclass(slots=True)
+class _CacheEntry:
+    mtime: float
+    tasks: tuple[TaskMetadata, ...]
+
+
+_cache: dict[Path, _CacheEntry] = {}
+_cache_lock = Lock()
 
 
 def _read_role_metadata(role_dir: Path) -> TaskMetadata | None:
@@ -44,19 +55,25 @@ def discover_tasks(roles_root: Path) -> list[TaskMetadata]:
     return tasks
 
 
-@lru_cache(maxsize=8)
-def _cached_discover(roles_root_str: str, mtime: float) -> tuple[TaskMetadata, ...]:
-    return tuple(discover_tasks(Path(roles_root_str)))
+def _latest_mtime(roles_root: Path) -> float:
+    return max(
+        (p.stat().st_mtime for p in roles_root.rglob(_METADATA_FILENAME)),
+        default=0.0,
+    )
 
 
 def discover_tasks_cached(roles_root: Path) -> list[TaskMetadata]:
     if not roles_root.exists():
         return []
-    mtime = max(
-        (p.stat().st_mtime for p in roles_root.rglob(_METADATA_FILENAME)),
-        default=0.0,
-    )
-    return list(_cached_discover(str(roles_root), mtime))
+    key = roles_root.resolve()
+    mtime = _latest_mtime(roles_root)
+    with _cache_lock:
+        entry = _cache.get(key)
+        if entry is not None and entry.mtime == mtime:
+            return list(entry.tasks)
+        tasks = tuple(discover_tasks(roles_root))
+        _cache[key] = _CacheEntry(mtime=mtime, tasks=tasks)
+        return list(tasks)
 
 
 def find_task(roles_root: Path, task_id: str) -> TaskMetadata | None:
