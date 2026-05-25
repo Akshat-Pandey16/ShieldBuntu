@@ -1,4 +1,7 @@
 {
+  "python.defaultInterpreterPath": "${workspaceFolder}/apps/server/.venv/bin/python",
+  "python.analysis.extraPaths": ["${workspaceFolder}/apps/server/src"],
+  "ruff.interpreter": ["${workspaceFolder}/apps/server/.venv/bin/python"],
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",

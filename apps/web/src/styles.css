@@ -1,8 +1,5 @@
 @import "tailwindcss";
 
-/* Tailwind v4: CSS-based theme. Tokens defined here are available as
-   Tailwind utilities (e.g. bg-background, text-foreground). */
-
 @theme {
   --color-background: oklch(0.145 0 0);
   --color-foreground: oklch(0.985 0 0);
@@ -23,7 +20,6 @@
   --font-mono: ui-monospace, "JetBrains Mono", "Fira Code", monospace;
 }
 
-/* Light theme overrides (toggled via .light on <html>) */
 .light {
   --color-background: oklch(1 0 0);
   --color-foreground: oklch(0.145 0 0);

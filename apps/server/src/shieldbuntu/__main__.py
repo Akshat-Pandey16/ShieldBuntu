@@ -1,5 +1,3 @@
-"""CLI entry: `python -m shieldbuntu` or `shieldbuntu-server`."""
-
 from __future__ import annotations
 
 import uvicorn
@@ -14,7 +12,7 @@ def main() -> None:
         host=settings.host,
         port=settings.port,
         reload=settings.dev_mode,
-        log_config=None,  # structlog handles logging
+        log_config=None,
     )
 
 

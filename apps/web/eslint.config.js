@@ -29,8 +29,6 @@ export default tseslint.config(
     },
   },
   {
-    // TanStack Router file-based routes export both `Route` and the component.
-    // The react-refresh rule doesn't recognize `Route` and flags every route file.
     files: ["src/routes/**/*.tsx"],
     rules: { "react-refresh/only-export-components": "off" },
   },

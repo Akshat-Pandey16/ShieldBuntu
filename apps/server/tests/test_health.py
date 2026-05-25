@@ -1,5 +1,3 @@
-"""Smoke test that the app boots and /api/health responds."""
-
 from __future__ import annotations
 
 from httpx import AsyncClient

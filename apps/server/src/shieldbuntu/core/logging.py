@@ -1,5 +1,3 @@
-"""Structured logging via structlog. JSON in prod, pretty in dev."""
-
 from __future__ import annotations
 
 import logging
@@ -9,7 +7,6 @@ import structlog
 
 
 def configure_logging(*, json_logs: bool, level: str = "INFO") -> None:
-    """Wire up structlog + stdlib logging into one pipeline."""
     timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
     shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
@@ -33,7 +30,6 @@ def configure_logging(*, json_logs: bool, level: str = "INFO") -> None:
         cache_logger_on_first_use=True,
     )
 
-    # Route stdlib loggers (uvicorn, sqlalchemy, etc.) through structlog
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(
         structlog.stdlib.ProcessorFormatter(
@@ -47,7 +43,6 @@ def configure_logging(*, json_logs: bool, level: str = "INFO") -> None:
     root = logging.getLogger()
     root.handlers = [handler]
     root.setLevel(level)
-    # Quiet down chatty libs
     for noisy in ("uvicorn.access", "watchfiles.main"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 

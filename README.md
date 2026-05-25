@@ -30,27 +30,24 @@ shieldbuntu/
 
 ## Dev quickstart
 
-Prerequisites: Python 3.12+, Node 22+, `uv`, `pnpm`, and (optional) `just`.
+Prerequisites: Python 3.12+, Node 22+, [uv](https://docs.astral.sh/uv/), [pnpm](https://pnpm.io/), GNU Make.
 
 ```bash
-# Backend
-cd apps/server
-uv sync
-uv run uvicorn shieldbuntu.main:app --reload
-
-# Frontend (in a second terminal)
-cd apps/web
-pnpm install
-pnpm dev
+make install        # uv sync + pnpm install
+make dev            # boots backend + frontend together
+make help           # list every command
 ```
 
-Or with `just` from the repo root:
+Common workflows:
 
 ```bash
-just dev      # boots backend + frontend together
-just test     # runs both test suites
-just lint     # ruff + eslint + prettier
-just build    # builds .deb
+make test           # run all tests
+make lint           # ruff + eslint (read-only)
+make format         # ruff + prettier (writes)
+make deps-outdated  # show what's out of date
+make deps-upgrade   # bump everything to latest (verified live against PyPI + npm)
+make db-reset CONFIRM=yes
+make build-deb      # build the .deb
 ```
 
 ## License
