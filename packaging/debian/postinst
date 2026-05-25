@@ -1,0 +1,20 @@
+#!/bin/sh
+# Run after .deb install. Enables and starts the service.
+set -e
+
+case "$1" in
+    configure)
+        systemctl daemon-reload || true
+        systemctl enable shieldbuntu.service || true
+        systemctl restart shieldbuntu.service || true
+        echo ""
+        echo "ShieldBuntu is running at http://127.0.0.1:8765"
+        echo "View logs:    journalctl -u shieldbuntu -f"
+        echo "Stop service: sudo systemctl stop shieldbuntu"
+        echo ""
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+esac
+
+exit 0

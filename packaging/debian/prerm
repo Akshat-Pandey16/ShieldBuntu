@@ -1,0 +1,14 @@
+#!/bin/sh
+# Run before .deb removal. Stops the service.
+set -e
+
+case "$1" in
+    remove|upgrade|deconfigure)
+        systemctl stop shieldbuntu.service || true
+        systemctl disable shieldbuntu.service || true
+        ;;
+    failed-upgrade)
+        ;;
+esac
+
+exit 0
