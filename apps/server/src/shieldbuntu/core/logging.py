@@ -29,8 +29,7 @@ def configure_logging(*, json_logs: bool, level: str = "INFO") -> None:
         cache_logger_on_first_use=True,
     )
 
-    for noisy in ("uvicorn.access", "watchfiles.main"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)
+    logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
 
 
 def get_logger(name: str | None = None, **initial_values: object) -> structlog.stdlib.BoundLogger:
