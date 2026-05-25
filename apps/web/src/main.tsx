@@ -6,6 +6,8 @@ import { Toaster } from "sonner";
 import { useTheme } from "next-themes";
 
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { setUnauthorizedHandler } from "@/lib/api";
+import { meQueryKey } from "@/lib/auth";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
 
@@ -23,6 +25,7 @@ const router = createRouter({
   routeTree,
   defaultPreload: "intent",
   context: { queryClient },
+  defaultPendingMs: 150,
 });
 
 declare module "@tanstack/react-router" {
@@ -30,6 +33,17 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
+
+setUnauthorizedHandler(() => {
+  queryClient.setQueryData(meQueryKey, null);
+  void queryClient.invalidateQueries({ queryKey: meQueryKey });
+  if (!window.location.pathname.startsWith("/login")) {
+    void router.navigate({
+      to: "/login",
+      search: { redirect: window.location.pathname + window.location.search },
+    });
+  }
+});
 
 function ThemedToaster() {
   const { resolvedTheme } = useTheme();
@@ -40,7 +54,7 @@ function ThemedToaster() {
       position="bottom-right"
       closeButton
       toastOptions={{
-        className: "border-border",
+        className: "border-border/70 shadow-soft rounded-xl",
       }}
     />
   );

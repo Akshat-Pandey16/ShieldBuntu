@@ -158,6 +158,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/runs/{run_id}/events/{seq}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run Event */
+        get: operations["get_run_event_api_runs__run_id__events__seq__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/runs/{run_id}/cancel": {
         parameters: {
             query?: never;
@@ -211,6 +228,19 @@ export interface components {
          * @enum {string}
          */
         EventLevel: "info" | "change" | "warning" | "error" | "fatal";
+        /** EventSummary */
+        EventSummary: {
+            /** Seq */
+            seq: number;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            level: components["schemas"]["EventLevel"];
+            /** Message */
+            message: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -267,6 +297,13 @@ export interface components {
             /** @default pending */
             status: components["schemas"]["RunStatus"];
             /**
+             * Cancel Requested
+             * @default false
+             */
+            cancel_requested: boolean;
+            /** Initiated By */
+            initiated_by?: string | null;
+            /**
              * Started At
              * Format: date-time
              */
@@ -312,7 +349,7 @@ export interface components {
          * RunStatus
          * @enum {string}
          */
-        RunStatus: "pending" | "running" | "succeeded" | "failed" | "cancelled";
+        RunStatus: "pending" | "running" | "succeeded" | "no_change" | "failed" | "cancelled";
         /** StartRunRequest */
         StartRunRequest: {
             /** Task Id */
@@ -329,12 +366,35 @@ export interface components {
              * @default local
              */
             host_id: string;
+            /** Inputs */
+            inputs?: {
+                [key: string]: string;
+            };
         };
-        /**
-         * TaskCapability
-         * @enum {string}
-         */
-        TaskCapability: "apply" | "revert" | "check";
+        /** TaskInputSpec */
+        TaskInputSpec: {
+            /** Name */
+            name: string;
+            /** Label */
+            label: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Secret
+             * @default false
+             */
+            secret: boolean;
+            /**
+             * Required
+             * @default true
+             */
+            required: boolean;
+            /** Pattern */
+            pattern?: string | null;
+        };
         /** TaskMetadata */
         TaskMetadata: {
             /** Id */
@@ -353,7 +413,7 @@ export interface components {
             /** Profiles */
             profiles?: components["schemas"]["Profile"][];
             /** Capabilities */
-            capabilities?: components["schemas"]["TaskCapability"][];
+            capabilities?: components["schemas"]["RunAction"][];
             /**
              * Requires Root
              * @default true
@@ -361,6 +421,8 @@ export interface components {
             requires_root: boolean;
             /** Tags */
             tags?: string[];
+            /** Inputs */
+            inputs?: components["schemas"]["TaskInputSpec"][];
         };
         /** UserResponse */
         UserResponse: {
@@ -535,6 +597,7 @@ export interface operations {
         parameters: {
             query?: {
                 task_id?: string | null;
+                status?: components["schemas"]["RunStatus"] | null;
                 limit?: number;
                 offset?: number;
             };
@@ -648,7 +711,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HardeningEvent"][];
+                    "application/json": components["schemas"]["EventSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_event_api_runs__run_id__events__seq__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                seq: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardeningEvent"];
                 };
             };
             /** @description Validation Error */

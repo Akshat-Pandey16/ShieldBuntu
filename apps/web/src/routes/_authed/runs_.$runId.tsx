@@ -2,28 +2,24 @@ import { useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "motion/react";
-import { ChevronLeft, OctagonX, Radio, ShieldOff } from "lucide-react";
+import { ChevronLeft, Hash, OctagonX, Radio, ShieldOff, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { EmptyState } from "@/components/EmptyState";
-import { PageShell } from "@/components/PageShell";
 import { RunEventList } from "@/components/RunEventList";
 import { RunStatusBadge } from "@/components/RunStatusBadge";
 import { StatusDot } from "@/components/StatusDot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
-import { requireAuth } from "@/lib/auth-guard";
-import { formatDuration, formatTimestamp } from "@/lib/format";
+import { api, isActive, isTerminal } from "@/lib/api";
+import { formatDuration, formatTimestamp, shortId } from "@/lib/format";
 import { useRunStream } from "@/lib/useRunStream";
 
-export const Route = createFileRoute("/runs_/$runId")({
-  beforeLoad: ({ context, location }) => requireAuth(context.queryClient, location.href),
+export const Route = createFileRoute("/_authed/runs_/$runId")({
   component: RunDetailPage,
 });
-
-const TERMINAL = new Set(["succeeded", "failed", "cancelled"]);
 
 function RunDetailPage() {
   const { runId } = Route.useParams();
@@ -40,12 +36,12 @@ function RunDetailPage() {
     },
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      if (status && TERMINAL.has(status)) return false;
-      return 1500;
+      if (isTerminal(status)) return false;
+      return 2000;
     },
   });
 
-  const isTerminal = runQuery.data ? TERMINAL.has(runQuery.data.status) : false;
+  const terminal = runQuery.data ? isTerminal(runQuery.data.status) : false;
   const stream = useRunStream({ runId, enabled: !!runQuery.data });
 
   useEffect(() => {
@@ -60,28 +56,33 @@ function RunDetailPage() {
       const { data, error, response } = await api.POST("/api/runs/{run_id}/cancel", {
         params: { path: { run_id: runId } },
       });
-      if (response.status === 409) throw new Error("Run already finished.");
       if (error || !data) throw new Error(`Cancel failed (${response.status})`);
       return data;
     },
-    onSuccess: () => toast.success("Cancellation requested"),
+    onSuccess: (data) => {
+      if (data.cancel_requested) {
+        toast.success("Cancellation requested");
+      } else {
+        toast.info("Run already finished");
+      }
+    },
     onError: (e: Error) => toast.error("Could not cancel", { description: e.message }),
   });
 
   if (runQuery.isLoading) {
     return (
-      <PageShell breadcrumb={[{ label: "Runs", to: "/runs" }, { label: "…" }]}>
-        <div className="space-y-4">
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-64 w-full rounded-xl" />
-        </div>
-      </PageShell>
+      <>
+        <Breadcrumb items={[{ label: "Runs", to: "/runs" }, { label: "…" }]} />
+        <Skeleton className="h-40 w-full rounded-3xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
+      </>
     );
   }
 
   if (!runQuery.data) {
     return (
-      <PageShell breadcrumb={[{ label: "Runs", to: "/runs" }, { label: "Not found" }]}>
+      <>
+        <Breadcrumb items={[{ label: "Runs", to: "/runs" }, { label: "Not found" }]} />
         <EmptyState
           icon={ShieldOff}
           title="Run not found"
@@ -95,46 +96,59 @@ function RunDetailPage() {
             </Button>
           }
         />
-      </PageShell>
+      </>
     );
   }
 
   const run = runQuery.data;
-  const canCancel = run.status === "pending" || run.status === "running";
-  const shortId = (run.id ?? "").split("-")[0] ?? "";
+  const canCancel = isActive(run.status);
 
   return (
-    <PageShell
-      breadcrumb={[
-        { label: "Runs", to: "/runs" },
-        { label: <span className="font-mono">{shortId}</span> },
-      ]}
-    >
-      <header className="border-border bg-card overflow-hidden rounded-2xl border">
-        <div className="from-accent/10 to-card bg-gradient-to-br p-6">
+    <>
+      <Breadcrumb
+        items={[
+          { label: "Runs", to: "/runs" },
+          { label: <span className="font-mono">{shortId(run.id)}</span> },
+        ]}
+      />
+
+      <section className="border-border/70 bg-card relative overflow-hidden rounded-3xl border shadow-soft">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,oklch(from_var(--color-brand)_l_c_h/0.16),transparent_55%)]"
+          aria-hidden
+        />
+        <div className="p-6 lg:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
                 <RunStatusBadge status={run.status} />
                 <span className="text-muted-foreground capitalize">{run.action}</span>
                 {run.dry_run && <Badge variant="muted">dry-run</Badge>}
-                {stream.connected && !isTerminal && (
+                {stream.connected && !terminal && (
                   <Badge variant="accent" className="gap-1.5">
-                    <StatusDot tone="accent" pulse size="sm" />
+                    <StatusDot tone="brand" pulse size="sm" />
                     live
                   </Badge>
                 )}
+                {!stream.connected && !terminal && stream.retryCount > 0 && (
+                  <Badge variant="warning" className="gap-1.5">
+                    <WifiOff className="size-3" /> reconnecting…
+                  </Badge>
+                )}
               </div>
-              <h1 className="text-foreground text-2xl font-semibold tracking-tight">
+              <h1 className="text-foreground text-2xl font-semibold tracking-tight md:text-3xl">
                 <Link
                   to="/tasks/$taskId"
                   params={{ taskId: run.task_id }}
-                  className="hover:text-accent transition-colors"
+                  className="hover:text-brand transition-colors"
                 >
                   {run.task_id}
                 </Link>
               </h1>
-              <p className="text-muted-foreground font-mono text-xs">{run.id}</p>
+              <p className="text-muted-foreground flex flex-wrap items-center gap-2 font-mono text-xs">
+                <Hash className="size-3" />
+                {run.id}
+              </p>
             </div>
             {canCancel && (
               <Button
@@ -143,27 +157,33 @@ function RunDetailPage() {
                 disabled={cancelRun.isPending}
               >
                 <OctagonX className="size-4" />
-                Cancel run
+                {cancelRun.isPending ? "Cancelling…" : "Cancel run"}
               </Button>
             )}
           </div>
         </div>
 
-        <div className="border-border grid grid-cols-2 gap-4 border-t p-5 text-sm sm:grid-cols-4">
+        <div className="border-border/70 grid grid-cols-2 gap-4 border-t p-6 text-sm sm:grid-cols-4 lg:px-8">
           <Field label="Started" value={formatTimestamp(run.started_at)} />
           <Field label="Finished" value={formatTimestamp(run.finished_at)} />
           <Field label="Duration" value={formatDuration(run.started_at, run.finished_at)} mono />
           <Field
             label="Exit code"
-            value={
-              run.exit_code === null || run.exit_code === undefined ? "—" : String(run.exit_code)
-            }
+            value={run.exit_code === null || run.exit_code === undefined ? "—" : String(run.exit_code)}
             mono
           />
         </div>
 
+        {run.initiated_by && (
+          <div className="border-border/70 border-t px-6 py-3 lg:px-8">
+            <p className="text-muted-foreground text-xs">
+              Initiated by <span className="text-foreground font-medium">{run.initiated_by}</span>
+            </p>
+          </div>
+        )}
+
         {run.summary && Object.keys(run.summary).length > 0 && (
-          <div className="border-border flex flex-wrap gap-1.5 border-t p-5">
+          <div className="border-border/70 flex flex-wrap gap-1.5 border-t p-5 lg:px-8">
             {Object.entries(run.summary).map(([k, v]) => (
               <Badge key={k} variant="outline" className="font-mono">
                 <span className="text-muted-foreground">{k}:</span>
@@ -172,36 +192,41 @@ function RunDetailPage() {
             ))}
           </div>
         )}
-      </header>
+      </section>
 
-      <section className="border-border bg-card overflow-hidden rounded-2xl border">
-        <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+      <section className="border-border/70 bg-card overflow-hidden rounded-2xl border shadow-soft">
+        <header className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <Radio className="text-accent size-4" />
+            <Radio className="text-brand size-4" />
             <h2 className="text-foreground text-sm font-semibold tracking-tight">Event stream</h2>
             <span className="text-muted-foreground text-xs">
-              {isTerminal ? "Final log" : stream.connected ? "Streaming live" : "Connecting…"}
+              {terminal
+                ? "Final log"
+                : stream.connected
+                  ? "Streaming live"
+                  : stream.retryCount > 0
+                    ? `Retrying (attempt ${stream.retryCount})`
+                    : "Connecting…"}
             </span>
           </div>
           <motion.span
             key={stream.events.length}
-            initial={{ scale: 0.9, opacity: 0.6 }}
+            initial={{ scale: 0.92, opacity: 0.6 }}
             animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.18 }}
             className="text-muted-foreground font-mono text-xs tabular-nums"
           >
             {stream.events.length} event{stream.events.length === 1 ? "" : "s"}
           </motion.span>
         </header>
-        <div className="border-border border-t">
+        <div className="border-border/70 border-t">
           <RunEventList
             events={stream.events}
-            emptyMessage={
-              isTerminal ? "No events were recorded for this run." : "Waiting for events…"
-            }
+            emptyMessage={terminal ? "No events were recorded for this run." : "Waiting for events…"}
           />
         </div>
       </section>
-    </PageShell>
+    </>
   );
 }
 
@@ -214,10 +239,18 @@ interface FieldProps {
 function Field({ label, value, mono }: FieldProps) {
   return (
     <div className="space-y-1">
-      <div className="text-muted-foreground text-[10px] font-medium uppercase tracking-widest">
+      <div className="text-muted-foreground text-[10px] font-medium uppercase tracking-[0.18em]">
         {label}
       </div>
-      <div className={`text-foreground ${mono ? "font-mono" : ""}`}>{value}</div>
+      <div
+        className={
+          mono
+            ? "text-foreground font-mono text-[13px]"
+            : "text-foreground text-[13px]"
+        }
+      >
+        {value}
+      </div>
     </div>
   );
 }

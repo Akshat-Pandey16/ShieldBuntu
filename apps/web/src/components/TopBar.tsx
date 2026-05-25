@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 
-import { Breadcrumb, type BreadcrumbItem } from "@/components/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserMenu } from "@/components/UserMenu";
@@ -9,40 +7,50 @@ import type { User } from "@/lib/auth";
 
 interface TopBarProps {
   user: User;
-  breadcrumb?: BreadcrumbItem[];
-  onOpenCommand?: () => void;
+  onOpenCommand: () => void;
+  onOpenSidebar: () => void;
 }
 
 function detectIsMac(): boolean {
   if (typeof navigator === "undefined") return false;
-  return navigator.platform.toLowerCase().includes("mac");
+  const ua = navigator.userAgent || "";
+  return /Mac|iPhone|iPad|iPod/.test(ua);
 }
 
-export function TopBar({ user, breadcrumb, onOpenCommand }: TopBarProps) {
-  const [isMac] = useState(detectIsMac);
+const isMac = detectIsMac();
 
+export function TopBar({ user, onOpenCommand, onOpenSidebar }: TopBarProps) {
   return (
-    <header className="border-border bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-20 flex h-14 items-center justify-between gap-4 border-b px-6 backdrop-blur-md">
-      <div className="min-w-0 flex-1">
-        {breadcrumb && breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} />}
-      </div>
-      <div className="flex items-center gap-2">
-        {onOpenCommand && (
+    <header className="border-border/60 sticky top-0 z-20 border-b backdrop-blur-md supports-[backdrop-filter]:bg-background/55 bg-background/80">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 lg:px-10">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenCommand}
-            className="text-muted-foreground hover:text-foreground hidden gap-2 pr-1.5 sm:flex"
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={onOpenSidebar}
+            aria-label="Open menu"
           >
-            <Search className="size-4" />
-            <span>Search…</span>
-            <kbd className="bg-muted text-muted-foreground ml-2 rounded px-1.5 py-0.5 font-mono text-[10px]">
+            <Menu className="size-4" />
+          </Button>
+          <button
+            type="button"
+            onClick={onOpenCommand}
+            className="bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground border-border/60 group flex w-full max-w-sm items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors"
+            aria-label="Open command palette"
+          >
+            <Search className="size-4 shrink-0" />
+            <span className="flex-1 text-left">Quick jump…</span>
+            <kbd className="bg-background/80 text-muted-foreground border-border/80 hidden rounded border px-1.5 py-0.5 font-mono text-[10px] sm:inline">
               {isMac ? "⌘K" : "Ctrl K"}
             </kbd>
-          </Button>
-        )}
-        <ThemeToggle />
-        <UserMenu user={user} />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
+          <UserMenu user={user} />
+        </div>
       </div>
     </header>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   ListChecks,
   LogOut,
+  Monitor,
   Moon,
   Radio,
   Search,
@@ -30,6 +31,7 @@ export function CommandPalette({ open, onOpenChange, onLogout }: CommandPaletteP
   const tasksQuery = useQuery({
     queryKey: ["tasks"],
     queryFn: async () => (await api.GET("/api/tasks", {})).data ?? [],
+    staleTime: 30_000,
     enabled: open,
   });
 
@@ -43,6 +45,16 @@ export function CommandPalette({ open, onOpenChange, onLogout }: CommandPaletteP
     setTimeout(fn, 30);
   };
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closePalette();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -52,13 +64,13 @@ export function CommandPalette({ open, onOpenChange, onLogout }: CommandPaletteP
         if (e.target === e.currentTarget) closePalette();
       }}
     >
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-md" aria-hidden />
       <Command
         label="Command palette"
-        className="bg-popover border-border relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-xl border shadow-2xl"
+        className="glass-strong relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-2xl shadow-2xl ring-1 ring-brand/20"
         shouldFilter
       >
-        <div className="border-border flex items-center gap-2 border-b px-4 py-3">
+        <div className="border-border/60 flex items-center gap-2 border-b px-4 py-3.5">
           <Search className="text-muted-foreground size-4 shrink-0" />
           <Command.Input
             value={query}
@@ -67,32 +79,29 @@ export function CommandPalette({ open, onOpenChange, onLogout }: CommandPaletteP
             className="placeholder:text-muted-foreground text-foreground flex-1 bg-transparent text-sm outline-none"
             autoFocus
           />
-          <kbd className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
+          <kbd className="bg-background/80 text-muted-foreground border-border/80 rounded border px-1.5 py-0.5 font-mono text-[10px]">
             ESC
           </kbd>
         </div>
         <Command.List className="scrollbar-thin max-h-[420px] overflow-y-auto p-2">
           <Command.Empty className="text-muted-foreground p-8 text-center text-sm">
-            No results for "{query}"
+            Nothing matches "{query}"
           </Command.Empty>
 
           <Command.Group heading="Navigate" className="cmdk-group">
             <PaletteItem
               icon={<LayoutDashboard className="size-4" />}
               label="Dashboard"
-              shortcut="G D"
               onSelect={() => go(() => void navigate({ to: "/" }))}
             />
             <PaletteItem
               icon={<ListChecks className="size-4" />}
-              label="Tasks"
-              shortcut="G T"
+              label="Hardening tasks"
               onSelect={() => go(() => void navigate({ to: "/tasks" }))}
             />
             <PaletteItem
               icon={<Radio className="size-4" />}
               label="Runs"
-              shortcut="G R"
               onSelect={() => go(() => void navigate({ to: "/runs" }))}
             />
           </Command.Group>
@@ -102,7 +111,7 @@ export function CommandPalette({ open, onOpenChange, onLogout }: CommandPaletteP
               {tasksQuery.data.map((task) => (
                 <PaletteItem
                   key={task.id}
-                  icon={<ShieldCheck className="text-accent size-4" />}
+                  icon={<ShieldCheck className="text-brand size-4" />}
                   label={task.name}
                   hint={task.category}
                   keywords={[task.id, ...(task.tags ?? [])]}
@@ -117,13 +126,18 @@ export function CommandPalette({ open, onOpenChange, onLogout }: CommandPaletteP
           <Command.Group heading="Preferences" className="cmdk-group">
             <PaletteItem
               icon={<Sun className="size-4" />}
-              label="Switch to light theme"
+              label="Light theme"
               onSelect={() => go(() => setTheme("light"))}
             />
             <PaletteItem
               icon={<Moon className="size-4" />}
-              label="Switch to dark theme"
+              label="Dark theme"
               onSelect={() => go(() => setTheme("dark"))}
+            />
+            <PaletteItem
+              icon={<Monitor className="size-4" />}
+              label="System theme"
+              onSelect={() => go(() => setTheme("system"))}
             />
           </Command.Group>
 
@@ -142,39 +156,25 @@ export function CommandPalette({ open, onOpenChange, onLogout }: CommandPaletteP
 }
 
 interface PaletteItemProps {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   hint?: string;
-  shortcut?: string;
   keywords?: string[];
   danger?: boolean;
   onSelect: () => void;
 }
 
-function PaletteItem({
-  icon,
-  label,
-  hint,
-  shortcut,
-  keywords,
-  danger,
-  onSelect,
-}: PaletteItemProps) {
+function PaletteItem({ icon, label, hint, keywords, danger, onSelect }: PaletteItemProps) {
   return (
     <Command.Item
       onSelect={onSelect}
       value={`${label} ${hint ?? ""} ${(keywords ?? []).join(" ")}`}
-      className="data-[selected=true]:bg-secondary text-foreground flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors aria-selected:bg-secondary data-[danger=true]:text-destructive"
+      className="text-foreground aria-selected:bg-brand/15 aria-selected:text-foreground data-[danger=true]:text-destructive flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors"
       data-danger={danger}
     >
       {icon}
       <span className="flex-1 truncate">{label}</span>
       {hint && <span className="text-muted-foreground text-xs">{hint}</span>}
-      {shortcut && (
-        <kbd className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
-          {shortcut}
-        </kbd>
-      )}
     </Command.Item>
   );
 }

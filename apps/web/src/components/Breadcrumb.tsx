@@ -16,7 +16,10 @@ interface BreadcrumbProps {
 
 export function Breadcrumb({ items, className }: BreadcrumbProps) {
   return (
-    <nav aria-label="Breadcrumb" className={cn("flex items-center gap-1.5 text-sm", className)}>
+    <nav
+      aria-label="Breadcrumb"
+      className={cn("flex flex-wrap items-center gap-1.5 text-xs", className)}
+    >
       {items.map((item, i) => {
         const last = i === items.length - 1;
         return (
@@ -33,7 +36,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
                 {item.label}
               </span>
             )}
-            {!last && <ChevronRight className="text-muted-foreground/60 size-3.5 shrink-0" />}
+            {!last && <ChevronRight className="text-muted-foreground/50 size-3 shrink-0" />}
           </span>
         );
       })}

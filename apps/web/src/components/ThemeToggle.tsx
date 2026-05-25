@@ -22,17 +22,22 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Theme">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Theme"
+          className="hover:bg-secondary/70 rounded-full"
+        >
           <ActiveIcon className="size-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36">
+      <DropdownMenuContent align="end" className="glass-strong w-40">
         {items.map(({ value, label, Icon }) => (
           <DropdownMenuItem
             key={value}
             onClick={() => setTheme(value)}
             data-active={theme === value}
-            className="data-[active=true]:bg-accent/15 data-[active=true]:text-accent"
+            className="data-[active=true]:bg-brand/15 data-[active=true]:text-brand cursor-pointer"
           >
             <Icon className="size-4" />
             {label}

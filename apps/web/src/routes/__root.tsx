@@ -1,6 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 
+import { CustomCursor } from "@/components/CustomCursor";
+import { RootErrorBoundary } from "@/components/RootErrorBoundary";
 import { loadUser } from "@/lib/auth";
 
 interface RouterContext {
@@ -13,12 +15,14 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     return { user };
   },
   component: RootLayout,
+  errorComponent: RootErrorBoundary,
 });
 
 function RootLayout() {
   return (
-    <div className="text-foreground bg-background min-h-screen">
+    <div className="bg-background text-foreground relative min-h-screen">
       <Outlet />
+      <CustomCursor />
     </div>
   );
 }

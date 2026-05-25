@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark light" />
+    <meta
+      name="description"
+      content="ShieldBuntu — CIS-aligned Ubuntu hardening, in your browser."
+    />
+    <meta name="theme-color" content="#0e0a18" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <title>ShieldBuntu</title>
     <script>
       (function () {
@@ -11,16 +17,16 @@
           var stored = localStorage.getItem("theme");
           var prefersDark =
             window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var theme =
+          var resolved =
             stored === "light" || stored === "dark"
               ? stored
-              : stored === "system" || stored === null
-                ? prefersDark
-                  ? "dark"
-                  : "light"
-                : "dark";
-          document.documentElement.classList.add(theme);
-          document.documentElement.style.colorScheme = theme;
+              : prefersDark
+                ? "dark"
+                : "light";
+          var root = document.documentElement;
+          root.classList.add(resolved);
+          root.style.colorScheme = resolved;
+          root.style.backgroundColor = resolved === "light" ? "#fafafc" : "#100a1a";
         } catch (e) {
           document.documentElement.classList.add("dark");
         }

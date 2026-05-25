@@ -1,20 +1,19 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ListChecks, Search } from "lucide-react";
+import { ListChecks, Search, X } from "lucide-react";
 
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { EmptyState } from "@/components/EmptyState";
-import { PageShell } from "@/components/PageShell";
 import { TaskCard } from "@/components/TaskCard";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
-import { requireAuth } from "@/lib/auth-guard";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/tasks")({
-  beforeLoad: ({ context, location }) => requireAuth(context.queryClient, location.href),
+export const Route = createFileRoute("/_authed/tasks")({
   component: TasksPage,
 });
 
@@ -35,11 +34,12 @@ function TasksPage() {
   });
 
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [profile, setProfile] = useState<ProfileFilter>("all");
 
   const filtered = useMemo(() => {
     const all = tasksQuery.data ?? [];
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     return all.filter((t) => {
       if (profile !== "all" && !(t.profiles ?? []).includes(profile)) return false;
       if (!q) return true;
@@ -51,49 +51,70 @@ function TasksPage() {
         (t.tags ?? []).some((tag) => tag.toLowerCase().includes(q))
       );
     });
-  }, [tasksQuery.data, query, profile]);
+  }, [tasksQuery.data, deferredQuery, profile]);
 
   return (
-    <PageShell breadcrumb={[{ label: "Tasks" }]}>
+    <>
+      <Breadcrumb items={[{ label: "Tasks" }]} />
+
       <header className="space-y-2">
-        <h1 className="text-foreground text-2xl font-semibold tracking-tight">Hardening tasks</h1>
-        <p className="text-muted-foreground text-sm">
-          16 idempotent Ansible roles. Filter by CIS profile, search by name, or category.
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight">
+          Hardening <span className="text-gradient-brand">tasks</span>
+        </h1>
+        <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
+          {(tasksQuery.data?.length ?? 0) || ""} idempotent Ansible roles. Filter by CIS profile,
+          search by name, category, or tag.
         </p>
       </header>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-xs flex-1">
+        <div className="relative max-w-sm flex-1">
           <Search className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search tasks…"
-            className="pl-9"
+            className="pl-9 pr-9"
           />
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {profileFilters.map((p) => (
+          {query && (
             <button
-              key={p.id}
-              onClick={() => setProfile(p.id)}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                profile === p.id
-                  ? "bg-accent/15 text-accent ring-accent/30 ring-1"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-              )}
+              type="button"
+              onClick={() => setQuery("")}
+              className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2 rounded p-1"
+              aria-label="Clear search"
             >
-              {p.label}
+              <X className="size-3.5" />
             </button>
-          ))}
+          )}
+        </div>
+        <div role="tablist" aria-label="Profile filter" className="flex flex-wrap gap-1.5">
+          {profileFilters.map((p) => {
+            const active = profile === p.id;
+            return (
+              <button
+                key={p.id}
+                role="tab"
+                aria-pressed={active}
+                aria-selected={active}
+                onClick={() => setProfile(p.id)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-medium transition-all",
+                  active
+                    ? "bg-brand/15 text-brand border-brand/30"
+                    : "text-muted-foreground border-border/60 hover:bg-secondary/70 hover:text-foreground border-transparent",
+                )}
+              >
+                {p.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {tasksQuery.isLoading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-44 rounded-xl" />
+            <Skeleton key={i} className="h-44 rounded-2xl" />
           ))}
         </div>
       ) : filtered.length > 0 ? (
@@ -117,8 +138,22 @@ function TasksPage() {
               ? "Try a different search or profile filter."
               : "No hardening tasks discovered. Check apps/server/ansible/roles/."
           }
+          action={
+            (query || profile !== "all") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setQuery("");
+                  setProfile("all");
+                }}
+              >
+                Reset filters
+              </Button>
+            )
+          }
         />
       )}
-    </PageShell>
+    </>
   );
 }
