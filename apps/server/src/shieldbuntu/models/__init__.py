@@ -1,3 +1,4 @@
+from shieldbuntu.models.auth import AuthSession
 from shieldbuntu.models.run import (
     EventLevel,
     HardeningEvent,
@@ -8,6 +9,7 @@ from shieldbuntu.models.run import (
 from shieldbuntu.models.task import Profile, TaskCapability, TaskMetadata
 
 __all__ = [
+    "AuthSession",
     "EventLevel",
     "HardeningEvent",
     "HardeningRun",

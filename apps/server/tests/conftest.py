@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from shieldbuntu.core import auth as _auth
 from shieldbuntu.core.config import get_settings
 from shieldbuntu.core.db import dispose_db, init_db, run_metadata_create_all
 from shieldbuntu.engine.discovery import _cached_discover
@@ -16,6 +17,7 @@ from shieldbuntu.engine.orchestrator import (
 from shieldbuntu.main import create_app
 
 ANSIBLE_ROOT = Path(__file__).resolve().parent.parent / "ansible"
+TEST_USERNAME = "testuser"
 
 
 @pytest.fixture(autouse=True)
@@ -38,4 +40,12 @@ async def client(tmp_path: Path) -> AsyncIterator[AsyncClient]:
         yield ac
     await wait_for_background_runs()
     reset_runner()
+    _auth.reset_pam_verifier()
     await dispose_db()
+
+
+@pytest.fixture
+async def authed_client(client: AsyncClient) -> AsyncClient:
+    sess = await _auth.create_session(TEST_USERNAME)
+    client.cookies.set(_auth.COOKIE_NAME, sess.token)
+    return client

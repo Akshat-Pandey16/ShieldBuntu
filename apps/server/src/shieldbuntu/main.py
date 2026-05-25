@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from shieldbuntu import __version__
+from shieldbuntu.api.auth import router as auth_router
 from shieldbuntu.api.health import router as health_router
 from shieldbuntu.api.runs import router as runs_router
 from shieldbuntu.api.tasks import router as tasks_router
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.include_router(health_router, prefix="/api")
+    app.include_router(auth_router, prefix="/api")
     app.include_router(tasks_router, prefix="/api")
     app.include_router(runs_router, prefix="/api")
     return app

@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlmodel import select
 
+from shieldbuntu.api.deps import CurrentSession
 from shieldbuntu.core.config import get_settings
 from shieldbuntu.core.db import SessionDep
 from shieldbuntu.engine.discovery import get_task_or_404
@@ -24,7 +25,9 @@ class StartRunRequest(BaseModel):
 
 
 @router.post("", response_model=HardeningRun, status_code=status.HTTP_201_CREATED)
-async def create_run(body: StartRunRequest, session: SessionDep) -> HardeningRun:
+async def create_run(
+    body: StartRunRequest, session: SessionDep, _user: CurrentSession
+) -> HardeningRun:
     task = get_task_or_404(get_settings().ansible_root / "roles", body.task_id)
     required = TaskCapability(body.action.value)
     if required not in task.capabilities:
@@ -42,6 +45,7 @@ async def create_run(body: StartRunRequest, session: SessionDep) -> HardeningRun
 @router.get("", response_model=list[HardeningRun])
 async def list_runs(
     session: SessionDep,
+    _user: CurrentSession,
     task_id: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -55,7 +59,7 @@ async def list_runs(
 
 
 @router.get("/{run_id}", response_model=HardeningRun)
-async def get_run(run_id: UUID, session: SessionDep) -> HardeningRun:
+async def get_run(run_id: UUID, session: SessionDep, _user: CurrentSession) -> HardeningRun:
     run = await session.get(HardeningRun, run_id)
     if run is None:
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found")
@@ -66,6 +70,7 @@ async def get_run(run_id: UUID, session: SessionDep) -> HardeningRun:
 async def list_run_events(
     run_id: UUID,
     session: SessionDep,
+    _user: CurrentSession,
     since_seq: int = Query(default=0, ge=0),
     limit: int = Query(default=500, ge=1, le=5000),
 ) -> list[HardeningEvent]:

@@ -68,69 +68,78 @@ async def _wait_for_terminal(
         ) from exc
 
 
-async def test_start_run_succeeds_and_captures_events(client: AsyncClient) -> None:
+async def test_start_run_succeeds_and_captures_events(authed_client: AsyncClient) -> None:
     set_runner(_success_runner)
-    response = await client.post(
+    response = await authed_client.post(
         "/api/runs",
         json={"task_id": "kernel", "action": "apply", "dry_run": False},
     )
     assert response.status_code == 201
     run_id = response.json()["id"]
-    final = await _wait_for_terminal(client, run_id)
+    final = await _wait_for_terminal(authed_client, run_id)
     assert final["status"] == "succeeded"
     assert final["exit_code"] == 0
     assert final["summary"]["changed"] == 1
 
-    events_response = await client.get(f"/api/runs/{run_id}/events")
+    events_response = await authed_client.get(f"/api/runs/{run_id}/events")
     assert events_response.status_code == 200
     events = events_response.json()
     assert len(events) == 4
     assert events[0]["seq"] == 1
 
 
-async def test_failed_run_marked_failed(client: AsyncClient) -> None:
+async def test_failed_run_marked_failed(authed_client: AsyncClient) -> None:
     set_runner(_failure_runner)
-    response = await client.post(
+    response = await authed_client.post(
         "/api/runs",
         json={"task_id": "ssh", "action": "apply"},
     )
     assert response.status_code == 201
     run_id = response.json()["id"]
-    final = await _wait_for_terminal(client, run_id)
+    final = await _wait_for_terminal(authed_client, run_id)
     assert final["status"] == "failed"
     assert final["exit_code"] == 2
 
 
-async def test_unknown_task_returns_404(client: AsyncClient) -> None:
-    response = await client.post(
+async def test_unknown_task_returns_404(authed_client: AsyncClient) -> None:
+    response = await authed_client.post(
         "/api/runs",
         json={"task_id": "ghost", "action": "apply"},
     )
     assert response.status_code == 404
 
 
-async def test_run_event_pagination_with_since_seq(client: AsyncClient) -> None:
+async def test_run_event_pagination_with_since_seq(authed_client: AsyncClient) -> None:
     set_runner(_success_runner)
-    response = await client.post(
+    response = await authed_client.post(
         "/api/runs",
         json={"task_id": "firewall", "action": "apply"},
     )
     run_id = response.json()["id"]
-    await _wait_for_terminal(client, run_id)
+    await _wait_for_terminal(authed_client, run_id)
 
-    later = await client.get(f"/api/runs/{run_id}/events?since_seq=2")
+    later = await authed_client.get(f"/api/runs/{run_id}/events?since_seq=2")
     assert later.status_code == 200
     events = later.json()
     assert all(e["seq"] > 2 for e in events)
 
 
-async def test_list_runs_filters_by_task_id(client: AsyncClient) -> None:
+async def test_list_runs_filters_by_task_id(authed_client: AsyncClient) -> None:
     set_runner(_success_runner)
     for task_id in ("kernel", "ssh", "kernel"):
-        response = await client.post("/api/runs", json={"task_id": task_id, "action": "apply"})
+        response = await authed_client.post(
+            "/api/runs", json={"task_id": task_id, "action": "apply"}
+        )
         assert response.status_code == 201
-        await _wait_for_terminal(client, response.json()["id"])
+        await _wait_for_terminal(authed_client, response.json()["id"])
 
-    only_kernel = (await client.get("/api/runs?task_id=kernel")).json()
+    only_kernel = (await authed_client.get("/api/runs?task_id=kernel")).json()
     assert len(only_kernel) == 2
     assert all(r["task_id"] == "kernel" for r in only_kernel)
+
+
+async def test_runs_endpoints_require_auth(client: AsyncClient) -> None:
+    assert (await client.get("/api/runs")).status_code == 401
+    assert (
+        await client.post("/api/runs", json={"task_id": "kernel", "action": "apply"})
+    ).status_code == 401
