@@ -11,7 +11,6 @@ def configure_logging(*, json_logs: bool, level: str = "INFO") -> None:
     shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
-        structlog.stdlib.add_logger_name,
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
         timestamper,
@@ -30,19 +29,6 @@ def configure_logging(*, json_logs: bool, level: str = "INFO") -> None:
         cache_logger_on_first_use=True,
     )
 
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(
-        structlog.stdlib.ProcessorFormatter(
-            processors=[
-                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-                renderer,
-            ],
-            foreign_pre_chain=shared_processors,
-        )
-    )
-    root = logging.getLogger()
-    root.handlers = [handler]
-    root.setLevel(level)
     for noisy in ("uvicorn.access", "watchfiles.main"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 

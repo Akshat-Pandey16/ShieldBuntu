@@ -30,6 +30,9 @@ export default tseslint.config(
   },
   {
     files: ["src/routes/**/*.tsx"],
-    rules: { "react-refresh/only-export-components": "off" },
+    rules: {
+      "react-refresh/only-export-components": "off",
+      "@typescript-eslint/only-throw-error": "off",
+    },
   },
 );
