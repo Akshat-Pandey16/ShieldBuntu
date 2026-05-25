@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -23,6 +24,11 @@ from shieldbuntu.models.run import (
 
 log = get_logger(__name__)
 
+ACTIVE_RUN_TTL_SECONDS = 5.0
+TERMINAL_STATUSES: frozenset[RunStatus] = frozenset(
+    {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELLED}
+)
+
 
 class RunnerCallable(Protocol):
     def __call__(
@@ -34,13 +40,23 @@ class RunnerCallable(Protocol):
         dry_run: bool,
         private_data_dir: Path,
         on_event: Callable[[dict[str, Any]], None],
+        cancel_callback: Callable[[], bool] | None = None,
     ) -> dict[str, Any]: ...
+
+
+@dataclass
+class ActiveRun:
+    run_id: UUID
+    cancel_event: threading.Event = field(default_factory=threading.Event)
+    subscribers: list[asyncio.Queue[dict[str, Any] | None]] = field(default_factory=list)
+    terminated: asyncio.Event = field(default_factory=asyncio.Event)
 
 
 @dataclass
 class _OrchestratorState:
     runner_impl: RunnerCallable
     background_tasks: set[asyncio.Task[Any]] = field(default_factory=set)
+    active_runs: dict[UUID, ActiveRun] = field(default_factory=dict)
     completion_hooks: list[Callable[[UUID], Awaitable[None]]] = field(default_factory=list)
 
 
@@ -59,6 +75,18 @@ def on_run_complete(hook: Callable[[UUID], Awaitable[None]]) -> None:
     _state.completion_hooks.append(hook)
 
 
+def get_active_run(run_id: UUID) -> ActiveRun | None:
+    return _state.active_runs.get(run_id)
+
+
+def request_cancel(run_id: UUID) -> bool:
+    active = _state.active_runs.get(run_id)
+    if active is None:
+        return False
+    active.cancel_event.set()
+    return True
+
+
 async def start_run(
     task_id: str,
     action: RunAction,
@@ -72,6 +100,8 @@ async def start_run(
         await session.refresh(run)
         run_id = run.id
 
+    _state.active_runs[run_id] = ActiveRun(run_id=run_id)
+
     task = asyncio.create_task(_execute_run(run_id, task_id, action, dry_run))
     _state.background_tasks.add(task)
     task.add_done_callback(_state.background_tasks.discard)
@@ -80,6 +110,7 @@ async def start_run(
 
 async def _execute_run(run_id: UUID, task_id: str, action: RunAction, dry_run: bool) -> None:
     settings = get_settings()
+    active = _state.active_runs[run_id]
     private_data_dir = settings.data_dir / "runs" / str(run_id)
 
     async with session_scope() as session:
@@ -90,16 +121,25 @@ async def _execute_run(run_id: UUID, task_id: str, action: RunAction, dry_run: b
         await session.commit()
 
     loop = asyncio.get_running_loop()
-    queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
+    persistence_queue: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
     seq = 0
 
     def on_event(event_data: dict[str, Any]) -> None:
         nonlocal seq
         seq += 1
         parsed = parse_event(event_data, seq=seq)
-        loop.call_soon_threadsafe(queue.put_nowait, parsed)
 
-    persister = asyncio.create_task(_persist_events(run_id, queue))
+        def deliver() -> None:
+            persistence_queue.put_nowait(parsed)
+            for sub in list(active.subscribers):
+                sub.put_nowait(parsed)
+
+        loop.call_soon_threadsafe(deliver)
+
+    def cancel_callback() -> bool:
+        return active.cancel_event.is_set()
+
+    persister = asyncio.create_task(_persist_events(run_id, persistence_queue))
 
     result: dict[str, Any] = {}
     failure: Exception | None = None
@@ -112,17 +152,21 @@ async def _execute_run(run_id: UUID, task_id: str, action: RunAction, dry_run: b
             dry_run=dry_run,
             private_data_dir=private_data_dir,
             on_event=on_event,
+            cancel_callback=cancel_callback,
         )
     except Exception as exc:
         failure = exc
         log.exception("run.execution_failed", run_id=str(run_id), task_id=task_id)
     finally:
-        await queue.put(None)
+        await persistence_queue.put(None)
         await persister
 
     rc = int(result.get("rc", 1)) if result else 1
     status_str = result.get("status", "")
-    if failure is not None or rc != 0 or status_str == "failed":
+
+    if active.cancel_event.is_set():
+        status = RunStatus.CANCELLED
+    elif failure is not None or rc != 0 or status_str == "failed":
         status = RunStatus.FAILED
     else:
         status = RunStatus.SUCCEEDED
@@ -133,14 +177,30 @@ async def _execute_run(run_id: UUID, task_id: str, action: RunAction, dry_run: b
             return
         run.status = status
         run.finished_at = datetime.now(UTC)
-        run.exit_code = rc if not failure else -1
+        run.exit_code = rc if failure is None else -1
         run.summary = summarise_stats(result.get("stats") or {})
         if failure is not None:
             run.summary = {**(run.summary or {}), "error": str(failure)}
         await session.commit()
 
+    _signal_run_terminated(active, run_id)
+
     for hook in _state.completion_hooks:
         await hook(run_id)
+
+
+def _signal_run_terminated(active: ActiveRun, run_id: UUID) -> None:
+    active.terminated.set()
+    for sub in list(active.subscribers):
+        sub.put_nowait(None)
+    eviction = asyncio.create_task(_evict_active_run(run_id, ACTIVE_RUN_TTL_SECONDS))
+    _state.background_tasks.add(eviction)
+    eviction.add_done_callback(_state.background_tasks.discard)
+
+
+async def _evict_active_run(run_id: UUID, delay: float) -> None:
+    await asyncio.sleep(delay)
+    _state.active_runs.pop(run_id, None)
 
 
 async def _persist_events(run_id: UUID, queue: asyncio.Queue[dict[str, Any] | None]) -> None:

@@ -18,6 +18,7 @@ def _success_runner(
     dry_run: bool,
     private_data_dir: Path,
     on_event: Callable[[dict[str, Any]], None],
+    cancel_callback: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     on_event({"event": "playbook_on_play_start", "event_data": {"name": action}})
     on_event({"event": "playbook_on_task_start", "event_data": {"task": "apply something"}})
@@ -39,6 +40,7 @@ def _failure_runner(
     dry_run: bool,
     private_data_dir: Path,
     on_event: Callable[[dict[str, Any]], None],
+    cancel_callback: Callable[[], bool] | None = None,
 ) -> dict[str, Any]:
     on_event({"event": "playbook_on_task_start", "event_data": {"task": "boom"}})
     on_event(
