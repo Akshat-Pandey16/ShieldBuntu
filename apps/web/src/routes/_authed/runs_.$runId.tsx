@@ -9,6 +9,7 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { EmptyState } from "@/components/EmptyState";
 import { RunEventList } from "@/components/RunEventList";
 import { RunStatusBadge } from "@/components/RunStatusBadge";
+import { RunSummary } from "@/components/RunSummary";
 import { StatusDot } from "@/components/StatusDot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -182,14 +183,12 @@ function RunDetailPage() {
           </div>
         )}
 
-        {run.summary && Object.keys(run.summary).length > 0 && (
-          <div className="border-border/70 flex flex-wrap gap-1.5 border-t p-5 lg:px-8">
-            {Object.entries(run.summary).map(([k, v]) => (
-              <Badge key={k} variant="outline" className="font-mono">
-                <span className="text-muted-foreground">{k}:</span>
-                <span className="text-foreground ml-1">{String(v)}</span>
-              </Badge>
-            ))}
+        {terminal && (
+          <div className="border-border/70 border-t p-5 lg:px-8">
+            <div className="text-muted-foreground mb-3 text-[10px] font-medium uppercase tracking-[0.18em]">
+              Run summary
+            </div>
+            <RunSummary summary={run.summary} />
           </div>
         )}
       </section>

@@ -108,12 +108,31 @@ def build_event(
     )
 
 
+_STATS_KEY_MAP = (
+    ("ok", "ok"),
+    ("changed", "changed"),
+    ("failures", "failures"),
+    ("skipped", "skipped"),
+    ("dark", "unreachable"),
+    ("rescued", "rescued"),
+    ("ignored", "ignored"),
+)
+
+
 def summarise_stats(stats: dict[str, Any]) -> dict[str, Any]:
+    summary: dict[str, Any] = {
+        "ok": 0,
+        "changed": 0,
+        "failures": 0,
+        "skipped": 0,
+        "unreachable": 0,
+        "rescued": 0,
+        "ignored": 0,
+    }
     if not stats:
-        return {}
-    summary: dict[str, Any] = {}
-    for key in ("ok", "changed", "failures", "skipped", "dark", "rescued", "ignored"):
-        bucket = stats.get(key)
-        if isinstance(bucket, dict):
-            summary[key] = sum(bucket.values())
+        return summary
+    for stats_key, out_key in _STATS_KEY_MAP:
+        bucket = stats.get(stats_key)
+        if isinstance(bucket, dict) and bucket:
+            summary[out_key] = sum(int(v) for v in bucket.values() if isinstance(v, int | float))
     return summary
