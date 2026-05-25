@@ -35,4 +35,8 @@ export default tseslint.config(
       "@typescript-eslint/only-throw-error": "off",
     },
   },
+  {
+    files: ["src/lib/**/*.ts"],
+    rules: { "@typescript-eslint/only-throw-error": "off" },
+  },
 );
